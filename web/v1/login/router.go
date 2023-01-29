@@ -23,20 +23,17 @@ func (u *Router) Router() func(r chi.Router) {
 }
 
 func (u *Router) Login(w http.ResponseWriter, r *http.Request) {
-
 	data := &UserLoginRequest{}
-
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
 		return
 	}
-
 	login, err := u.LoginService.Login(data.Email, data.Password)
 
 	if err != nil {
 		render.Render(w, r, net.ErrForbidden(err))
-	} else {
-		render.Status(r, http.StatusOK)
-		render.Render(w, r, &UserLoginResponse{Token: login.Token})
+		return
 	}
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &UserLoginResponse{Token: login.Token})
 }

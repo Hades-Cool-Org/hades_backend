@@ -4,7 +4,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"hades_backend/web/v1/login"
+	"hades_backend/web/v1/products"
 	"hades_backend/web/v1/users"
+	"hades_backend/web/v1/vendors"
 	"net/http"
 )
 
@@ -29,6 +31,12 @@ func Service() http.Handler {
 
 	loginRouter := login.Router{}
 	r.Route(loginRouter.URL(), loginRouter.Router())
+
+	productsRouter := products.Router{}
+	r.Route(productsRouter.URL(), productsRouter.Router())
+
+	vendorsRouter := vendors.Router{}
+	r.Route(vendorsRouter.URL(), vendorsRouter.Router())
 
 	return r
 }
