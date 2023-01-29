@@ -3,7 +3,7 @@ package web
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"hades_backend/cmd/auth"
+	"hades_backend/web/v1/login"
 	"hades_backend/web/v1/users"
 	"net/http"
 )
@@ -24,9 +24,11 @@ func Service() http.Handler {
 		w.Write([]byte("pong"))
 	})
 
-	userRouter := users.UserRouter{LoginService: auth.Service{}}
-
+	userRouter := users.Router{}
 	r.Route(userRouter.URL(), userRouter.Router())
+
+	loginRouter := login.Router{}
+	r.Route(loginRouter.URL(), loginRouter.Router())
 
 	return r
 }
