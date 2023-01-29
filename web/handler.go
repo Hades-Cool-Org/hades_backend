@@ -3,7 +3,7 @@ package web
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"hades_backend/cmd/users/auth"
+	"hades_backend/cmd/auth"
 	"hades_backend/web/v1/users"
 	"net/http"
 )

@@ -3,7 +3,7 @@ package users
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"hades_backend/cmd/users/auth"
+	"hades_backend/cmd/auth"
 	"hades_backend/web/utils/net"
 	"net/http"
 )
