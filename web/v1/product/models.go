@@ -1,4 +1,4 @@
-package products
+package product
 
 import (
 	"errors"
@@ -13,11 +13,11 @@ type Product struct {
 	MeasuringUnit string `json:"measuring_unit"`
 }
 
-type ProductRequest struct {
+type Request struct {
 	*Product
 }
 
-func (p *ProductRequest) Bind(r *http.Request) error {
+func (p *Request) Bind(r *http.Request) error {
 	if p.MeasuringUnit == "" {
 		return errors.New("measuring unit cannot be null")
 	}
@@ -29,18 +29,18 @@ func (p *ProductRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type ProductResponse struct {
+type Response struct {
 	*Product
 }
 
-type AllProductResponse struct {
+type GetAllResponse struct {
 	Products []*Product `json:"products"`
 }
 
-func (p *AllProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (p *GetAllResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (p *ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (p *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

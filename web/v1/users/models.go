@@ -6,31 +6,31 @@ import (
 )
 
 type User struct {
-	ID    string       `json:"id"`
-	Name  string       `json:"name"`
-	Email string       `json:"email"`
-	Phone string       `json:"phone"`
-	Roles []*UserRoles `json:"roles"`
+	ID    string   `json:"id"`
+	Name  string   `json:"name"`
+	Email string   `json:"email"`
+	Phone string   `json:"phone"`
+	Roles []*Roles `json:"roles"`
 }
 
-type UserRoles struct {
+type Roles struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-type UserRequest struct {
+type Request struct {
 	*User
 }
 
-type UserResponse struct {
+type Response struct {
 	*User
 }
 
-func (u *UserResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (u *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (u *UserRequest) Bind(r *http.Request) error {
+func (u *Request) Bind(r *http.Request) error {
 
 	if u.Name == "" {
 		return errors.New("id cannot be null")

@@ -1,4 +1,4 @@
-package products
+package product
 
 import (
 	"errors"
@@ -19,15 +19,15 @@ const productIdParam = "product_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
-		r.Post("/", u.CreateProduct)
-		r.Get("/", u.GetAllProducts)
-		r.Get("/{product_id}", u.GetProduct)
-		r.Put("/{product_id}", u.UpdateProduct)
-		r.Delete("/{product_id}", u.DeleteProduct)
+		r.Post("/", u.Create)
+		r.Get("/", u.GetAll)
+		r.Get("/{product_id}", u.Get)
+		r.Put("/{product_id}", u.Update)
+		r.Delete("/{product_id}", u.Delete)
 	}
 }
 
-func (u *Router) GetAllProducts(w http.ResponseWriter, r *http.Request) {
+func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	//db search
 	products := []*Product{
 		{
@@ -47,10 +47,10 @@ func (u *Router) GetAllProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &AllProductResponse{products})
+	render.Render(w, r, &GetAllResponse{products})
 }
 
-func (u *Router) GetProduct(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	productId := chi.URLParam(r, productIdParam)
 
 	if productId == "" {
@@ -68,12 +68,12 @@ func (u *Router) GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &ProductResponse{product})
+	render.Render(w, r, &Response{product})
 }
 
-func (u *Router) CreateProduct(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 
-	data := &ProductRequest{}
+	data := &Request{}
 
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
@@ -90,12 +90,12 @@ func (u *Router) CreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &ProductResponse{product})
+	render.Render(w, r, &Response{product})
 }
 
-func (u *Router) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 
-	data := &ProductRequest{}
+	data := &Request{}
 
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
@@ -119,10 +119,10 @@ func (u *Router) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &ProductResponse{product})
+	render.Render(w, r, &Response{product})
 }
 
-func (u *Router) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 
 	productId := chi.URLParam(r, productIdParam)
 
@@ -131,5 +131,5 @@ func (u *Router) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Status(r, http.StatusOK)
+	render.Status(r, http.StatusNoContent)
 }

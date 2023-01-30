@@ -16,11 +16,11 @@ type Vendor struct {
 	Location string `json:"location"`
 }
 
-type VendorRequest struct {
+type Request struct {
 	*Vendor
 }
 
-func (v *VendorRequest) Bind(r *http.Request) error {
+func (v *Request) Bind(r *http.Request) error {
 
 	if v.Name == "" {
 		return errors.New("name cannot be empty")
@@ -41,18 +41,18 @@ func (v *VendorRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type VendorResponse struct {
+type Response struct {
 	*Vendor
 }
 
-type AllVendorResponse struct {
+type GetAllResponse struct {
 	Vendors []*Vendor `json:"vendors"`
 }
 
-func (p *AllVendorResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (p *GetAllResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (p *VendorResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (p *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

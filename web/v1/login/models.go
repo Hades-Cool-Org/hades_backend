@@ -5,12 +5,12 @@ import (
 	"net/http"
 )
 
-type UserLoginRequest struct {
+type Request struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-func (lr *UserLoginRequest) Bind(r *http.Request) error {
+func (lr *Request) Bind(r *http.Request) error {
 
 	if lr.Password == "" {
 		return errors.New("password cannot be null")
@@ -23,10 +23,10 @@ func (lr *UserLoginRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-type UserLoginResponse struct {
+type Response struct {
 	Token string `json:"jwt"`
 }
 
-func (u *UserLoginResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (u *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

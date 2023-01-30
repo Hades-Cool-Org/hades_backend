@@ -23,7 +23,7 @@ func (u *Router) Router() func(r chi.Router) {
 }
 
 func (u *Router) Login(w http.ResponseWriter, r *http.Request) {
-	data := &UserLoginRequest{}
+	data := &Request{}
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
 		return
@@ -35,5 +35,5 @@ func (u *Router) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &UserLoginResponse{Token: login.Token})
+	render.Render(w, r, &Response{Token: login.Token})
 }

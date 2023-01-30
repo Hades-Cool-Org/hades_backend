@@ -19,15 +19,15 @@ const vendorIdParam = "vendor_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
-		r.Post("/", u.CreateVendor)
-		r.Get("/", u.GetAllVendors)
-		r.Get("/{vendor_id}", u.GetVendor)
-		r.Put("/{vendor_id}", u.UpdateVendor)
-		r.Delete("/{vendor_id}", u.DeleteVendor)
+		r.Post("/", u.Create)
+		r.Get("/", u.GetAll)
+		r.Get("/{vendor_id}", u.Get)
+		r.Put("/{vendor_id}", u.Update)
+		r.Delete("/{vendor_id}", u.Delete)
 	}
 }
 
-func (u *Router) GetAllVendors(w http.ResponseWriter, r *http.Request) {
+func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	//db search
 	vendors := []*Vendor{
 		{
@@ -53,10 +53,10 @@ func (u *Router) GetAllVendors(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &AllVendorResponse{vendors})
+	render.Render(w, r, &GetAllResponse{vendors})
 }
 
-func (u *Router) GetVendor(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	vendorId := chi.URLParam(r, vendorIdParam)
 
 	if vendorId == "" {
@@ -77,12 +77,12 @@ func (u *Router) GetVendor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &VendorResponse{vendor})
+	render.Render(w, r, &Response{vendor})
 }
 
-func (u *Router) CreateVendor(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 
-	data := &VendorRequest{}
+	data := &Request{}
 
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
@@ -102,12 +102,12 @@ func (u *Router) CreateVendor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &VendorResponse{vendor})
+	render.Render(w, r, &Response{vendor})
 }
 
-func (u *Router) UpdateVendor(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 
-	data := &VendorRequest{}
+	data := &Request{}
 
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
@@ -134,10 +134,10 @@ func (u *Router) UpdateVendor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &VendorResponse{vendor})
+	render.Render(w, r, &Response{vendor})
 }
 
-func (u *Router) DeleteVendor(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 
 	vendorId := chi.URLParam(r, vendorIdParam)
 
@@ -146,5 +146,5 @@ func (u *Router) DeleteVendor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Status(r, http.StatusOK)
+	render.Status(r, http.StatusNoContent)
 }
