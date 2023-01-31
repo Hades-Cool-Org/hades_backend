@@ -10,10 +10,16 @@ type Vendor struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Phone    string `json:"phone"`
-	Phone2   string `json:"phone2"`
 	Cnpj     string `json:"cnpj"`
 	Type     string `json:"type"`
 	Location string `json:"location"`
+	Contact  *User  `json:"contact"`
+}
+
+type User struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Phone string `json:"phone"`
 }
 
 type Request struct {

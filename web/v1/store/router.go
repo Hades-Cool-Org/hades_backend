@@ -16,6 +16,7 @@ func (u *Router) URL() string {
 }
 
 const storeIdParam = "store_id"
+const courierIdParam = "courier_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
@@ -24,6 +25,8 @@ func (u *Router) Router() func(r chi.Router) {
 		r.Get("/{store_id}", u.Get)
 		r.Put("/{store_id}", u.Update)
 		r.Delete("/{store_id}", u.Delete)
+		r.Delete("/{store_id}/couriers/{courier_id}", u.DeleteCourier)
+		r.Post("/{store_id}/couriers/{courier_id}", u.AddCourier)
 	}
 }
 
@@ -122,5 +125,38 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	//db delete
 
+	render.Status(r, http.StatusNoContent)
+}
+
+func (u *Router) DeleteCourier(w http.ResponseWriter, r *http.Request) {
+
+	storeId := chi.URLParam(r, storeIdParam)
+
+	if storeId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
+		return
+	}
+
+	courierId := chi.URLParam(r, courierIdParam)
+
+	if courierId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("courierId is empty")))
+		return
+	}
+	//db delete
+
+	render.Status(r, http.StatusNoContent)
+}
+
+func (u *Router) AddCourier(w http.ResponseWriter, r *http.Request) {
+
+	data := &AddCourierRequest{}
+
+	if err := render.Bind(r, data); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	//db save
 	render.Status(r, http.StatusNoContent)
 }
