@@ -107,3 +107,24 @@ type Product struct {
 	Quantity      float32 `json:"quantity"`
 	Total         string  `json:"total"` //money TODO: RETORNAR UM VALOR INTEIRO?
 }
+
+type StartDeliveryRequest struct {
+	UserID    string `json:"user_id"`
+	CourierID string `json:"courier_id"`
+}
+
+func (r2 *StartDeliveryRequest) Bind(r *http.Request) error {
+
+	if r2.CourierID == "" {
+		return errors.New("courier_id cannot be empty")
+	}
+	return nil
+}
+
+type ListResponse struct {
+	Deliveries []*Delivery `json:"deliveries"`
+}
+
+func (l *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
