@@ -5,7 +5,17 @@ import (
 	"fmt"
 	"github.com/go-chi/jwtauth/v5"
 	"hades_backend/app/cmd/users"
+	"time"
 )
+
+var (
+	TokenAuth *jwtauth.JWTAuth
+	ttl       = 4 * time.Hour
+)
+
+func init() {
+	TokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
+}
 
 type Service struct {
 }
@@ -54,18 +64,17 @@ func (u *Service) Login(email, password string) (*UserLogin, error) {
 
 func encodeUserToken(user *users.UserDB) string {
 
-	tokenAuth := jwtauth.New("HS256", []byte("secret"), nil)
-
 	var roles []string
 
 	for _, role := range user.Roles {
 		roles = append(roles, role.Name)
 	}
 
-	_, tokenString, _ := tokenAuth.Encode(map[string]interface{}{
+	_, tokenString, _ := TokenAuth.Encode(map[string]interface{}{
 		"user_id": user.ID,
 		"name":    user.Name,
 		"roles":   roles,
+		"exp":     time.Now().UTC().Add(ttl).Unix(),
 	})
 
 	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)

@@ -16,12 +16,9 @@ func (u *Router) URL() string {
 	return "/delivery"
 }
 
-const orderIdParam = "order_id"
 const deliveryIdParam = "delivery_id"
 const userIdParam = "user_id"
-const productIdParam = "product_id"
 const dateStartParam = "date_start"
-const boxIdParam = "box_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
