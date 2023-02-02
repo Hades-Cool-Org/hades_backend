@@ -21,6 +21,7 @@ const deliveryIdParam = "delivery_id"
 const userIdParam = "user_id"
 const productIdParam = "product_id"
 const dateStartParam = "date_start"
+const boxIdParam = "box_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
@@ -28,10 +29,10 @@ func (u *Router) Router() func(r chi.Router) {
 		r.Get("/", u.GetCustom)                                    // assignar um pedido a um entrador
 		r.Delete("/{delivery_id}", u.Delete)                       // mudar o estado do pedido para coletado
 		r.Get("/{delivery_id}", u.Get)                             // mudar o estado do pedido para coletado
-		r.Post("/{delivery_id}/complete", u.Complete)              // recebebimento do pedido pelo gerente da loja
+		r.Post("/{delivery_id}/complete", u.Complete)              // recebimento do pedido pelo gerente da loja
 		r.Post("/{delivery_id}/user/{user_id}/collect", u.Collect) // mudar o estado do pedido para coletado
 
-		r.Post("/user/{user_id}/start", u.StartDelivery) //Associar um carro a um entregador
+		r.Post("/user/{user_id}/start", u.StartDelivery) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery
 		r.Post("/user/{user_id}/end", u.EndDelivery)     //end user turn
 		r.Get("/user/{user_id}", u.GetByUser)            //get all deliveries by user
 	}

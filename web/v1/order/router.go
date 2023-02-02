@@ -13,7 +13,7 @@ type Router struct {
 }
 
 func (u *Router) URL() string {
-	return "/order"
+	return "/orders"
 }
 
 const orderIdParam = "order_id"

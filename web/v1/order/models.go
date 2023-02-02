@@ -81,7 +81,8 @@ type Product struct {
 	Image         string   `json:"image_url"`
 	MeasuringUnit string   `json:"measuring_unit"`
 	Quantity      float32  `json:"quantity"`
-	Total         string   `json:"total"` //money TODO: RETORNAR UM VALOR INTEIRO?
+	Available     float32  `json:"available"` // quando houver uma coleta, alterar esse valor
+	Total         string   `json:"total"`     //money TODO: RETORNAR UM VALOR INTEIRO?
 	Stores        []*Store `json:"stores"`
 }
 

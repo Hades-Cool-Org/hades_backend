@@ -6,12 +6,14 @@ import (
 )
 
 type Delivery struct {
-	ID      string   `json:"id"`
-	State   string   `json:"state"` //ABERTO,COLETADO,ENTREGUE
-	Order   *Order   `json:"order"`
-	Store   *Store   `json:"store"`
-	User    *User    `json:"user"` //motorista
-	Vehicle *Vehicle `json:"vehicle"`
+	ID        string   `json:"id"`
+	State     string   `json:"state"` //ABERTO,COLETADO,ENTREGUE
+	Order     *Order   `json:"order"`
+	Store     *Store   `json:"store"`
+	User      *User    `json:"user"` //motorista
+	Vehicle   *Vehicle `json:"vehicle"`
+	StartDate string   `json:"start_date"`
+	EndDate   *string  `json:"end_date"`
 }
 
 type Request struct {
@@ -109,8 +111,10 @@ type Product struct {
 }
 
 type StartDeliveryRequest struct {
-	UserID    string `json:"user_id"`
-	CourierID string `json:"courier_id"`
+	UserID    string  `json:"user_id"`
+	CourierID string  `json:"courier_id"`
+	StartDate string  `json:"start_date"`
+	EndDate   *string `json:"end_date"`
 }
 
 func (r2 *StartDeliveryRequest) Bind(r *http.Request) error {
