@@ -3,6 +3,8 @@ package web
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.uber.org/zap"
+	customMiddleware "hades_backend/app/web/middleware"
 	"hades_backend/app/web/v1/login"
 	"hades_backend/app/web/v1/product"
 	"hades_backend/app/web/v1/user"
@@ -10,12 +12,11 @@ import (
 	"net/http"
 )
 
-func Service() http.Handler {
+func Service(l *zap.Logger) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	r.Use(customMiddleware.Logger(l))
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {

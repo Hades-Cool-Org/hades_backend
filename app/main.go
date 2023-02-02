@@ -23,11 +23,9 @@ func main() {
 	l.Info("Loading config")
 	newConfig := config.NewConfig()
 
-	log.Println(newConfig.Database.Username)
-
 	// The HTTP Server
 	l.Info("starting server")
-	server := &http.Server{Addr: fmt.Sprintf("%s:%s", newConfig.Server.Host, newConfig.Server.Port), Handler: web.Service()}
+	server := &http.Server{Addr: fmt.Sprintf("%s:%s", newConfig.Server.Host, newConfig.Server.Port), Handler: web.Service(l)}
 
 	// Server run context
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
