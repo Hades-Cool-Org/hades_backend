@@ -27,7 +27,7 @@ const dateStartParam = "dateStart"
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
 		r.Post("/", u.Create) //todo: should we update?
-		r.Get("/", u.GetCustom)
+		r.Get("/", u.GetAll)
 		r.Delete("/{order_id}", u.Delete)                             //todo: check permissions
 		r.Post("/{order_id}/product", u.AddProduct)                   //add product // TODO: verificar se aceitar multiplos é uma boa ideia
 		r.Put("/{order_id}/product/{product_id}", u.UpdateProduct)    //add product
@@ -201,7 +201,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &Response{order})
 }
 
-func (u *Router) GetCustom(w http.ResponseWriter, r *http.Request) {
+func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	state := chi.URLParam(r, stateParam)
 

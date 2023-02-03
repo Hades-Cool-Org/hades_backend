@@ -22,10 +22,6 @@ func Service(l *zap.Logger) http.Handler {
 	r.Use(customMiddleware.Logger(l))
 	r.Use(middleware.Recoverer)
 
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("welcome"))
-	})
-
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("pong"))
 	})
