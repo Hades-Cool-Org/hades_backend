@@ -4,8 +4,15 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
+	"hades_backend/app/logger"
 	"os"
 )
+
+var Cfg *Config
+
+func init() {
+	Cfg = newConfig()
+}
 
 type Config struct {
 	Server struct {
@@ -14,11 +21,15 @@ type Config struct {
 	} `yaml:"server"`
 	Database struct {
 		Username string `yaml:"user", envconfig:"DB_USERNAME"`
+		Host     string `yaml:"host", envconfig:"DB_HOST"`
+		Port     string `yaml:"port", envconfig:"DB_PORT"`
 		Password string `yaml:"pass", envconfig:"DB_PASSWORD"`
+		DbName   string `yaml:"db_name", envconfig:"DB_NAME"`
 	} `yaml:"database"`
 }
 
-func NewConfig() *Config {
+func newConfig() *Config {
+	logger.Logger.Info("Loading config")
 	var cfg Config
 	readFile(&cfg)
 	readEnv(&cfg)

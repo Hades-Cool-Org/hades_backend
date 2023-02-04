@@ -10,3 +10,8 @@ DB Date type
 
 Money Type
 - https://github.com/shopspring/decimal
+
+Docker
+
+- `docker-compose -f stack.yml up`
+- `docker-compose -f stack.yml down`

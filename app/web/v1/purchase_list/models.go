@@ -25,7 +25,7 @@ type Request struct {
 func (r2 *Request) Bind(r *http.Request) error {
 
 	if r2.UserID == "" {
-		return errors.New("user ID cannot be empty")
+		return errors.New("user UUID cannot be empty")
 	}
 
 	if len(r2.Products) == 0 {
@@ -34,7 +34,7 @@ func (r2 *Request) Bind(r *http.Request) error {
 
 	for _, product := range r2.Products {
 		if product.ID == "" {
-			return errors.New("product.ID cannot be empty")
+			return errors.New("product.UUID cannot be empty")
 		}
 	}
 

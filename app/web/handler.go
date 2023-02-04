@@ -6,13 +6,22 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
-	"hades_backend/app/cmd/auth"
+	user2 "hades_backend/app/cmd/user"
+	"hades_backend/app/driver"
+	user3 "hades_backend/app/repository/user"
 	customMiddleware "hades_backend/app/web/middleware"
+	"hades_backend/app/web/utils"
 	"hades_backend/app/web/v1/login"
 	"hades_backend/app/web/v1/product"
 	"hades_backend/app/web/v1/user"
 	"hades_backend/app/web/v1/vendors"
 	"net/http"
+)
+
+var (
+	db             = driver.DB
+	userRepository = user3.NewMySqlRepository(db)
+	userService    = user2.NewService(userRepository)
 )
 
 func Service(l *zap.Logger) http.Handler {
@@ -26,13 +35,13 @@ func Service(l *zap.Logger) http.Handler {
 		w.Write([]byte("pong"))
 	})
 
-	loginRouter := login.Router{}
+	loginRouter := initLoginRouter()
 	r.Route(loginRouter.URL(), loginRouter.Router())
 
 	r.Group(func(r chi.Router) {
 
 		// Seek, verify and validate JWT tokens
-		r.Use(jwtauth.Verifier(auth.TokenAuth))
+		r.Use(jwtauth.Verifier(user2.TokenAuth))
 
 		// Handle valid / invalid tokens. In this example, we use
 		// the provided authenticator middleware, but you can write your
@@ -58,5 +67,10 @@ func Service(l *zap.Logger) http.Handler {
 		})
 	})
 
+	utils.GenerateDocs(r)
 	return r
+}
+
+func initLoginRouter() *login.Router {
+	return login.NewRouter(userService)
 }

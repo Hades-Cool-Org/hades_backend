@@ -32,7 +32,7 @@ type Request struct {
 func (r2 *Request) Bind(r *http.Request) error {
 
 	if r2.User.ID == "" {
-		return errors.New("user ID cannot be empty")
+		return errors.New("user UUID cannot be empty")
 	}
 
 	if len(r2.Items) == 0 {

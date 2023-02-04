@@ -36,7 +36,7 @@ func (a *AddCourierRequest) Bind(r *http.Request) error {
 
 	for _, courier := range a.Couriers {
 		if courier.ID == "" {
-			return errors.New("courier.ID cannot be empty")
+			return errors.New("courier.UUID cannot be empty")
 		}
 	}
 

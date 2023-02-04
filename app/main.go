@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"go.uber.org/zap"
 	"hades_backend/app/config"
+	"hades_backend/app/logger"
 	"hades_backend/app/web"
 	"log"
 	"net/http"
@@ -16,12 +16,9 @@ import (
 
 func main() {
 
-	//LOG
-	var l, _ = zap.NewProduction()
-
+	l := logger.Logger
 	//  configs
-	l.Info("Loading config")
-	newConfig := config.NewConfig()
+	newConfig := config.Cfg
 
 	// The HTTP Server
 	l.Info("starting server")

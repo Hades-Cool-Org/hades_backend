@@ -3,13 +3,17 @@ package login
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"hades_backend/app/cmd/auth"
+	"hades_backend/app/cmd/user"
 	"hades_backend/app/web/utils/net"
 	"net/http"
 )
 
 type Router struct {
-	LoginService auth.Service
+	loginService user.Service
+}
+
+func NewRouter(loginService *user.Service) *Router {
+	return &Router{loginService: *loginService}
 }
 
 func (u *Router) URL() string {
@@ -28,7 +32,7 @@ func (u *Router) Login(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, net.ErrInvalidRequest(err))
 		return
 	}
-	login, err := u.LoginService.Login(data.Email, data.Password)
+	login, err := u.loginService.Login(r.Context(), data.Email, data.Password)
 
 	if err != nil {
 		render.Render(w, r, net.ErrForbidden(err))

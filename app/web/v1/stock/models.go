@@ -37,7 +37,7 @@ func (i *ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type Stock struct { //NO ID, WILL BE A SELECT ALL QUERY
+type Stock struct { //NO UUID, WILL BE A SELECT ALL QUERY
 	StoreId      string     `json:"store_id"`
 	LastModified string     `json:"last_modified"`
 	Stock        []*Product `json:"stock"`

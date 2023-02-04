@@ -4,11 +4,14 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"hades_backend/app/cmd/user"
+	"hades_backend/app/hades_errors"
 	"hades_backend/app/web/utils/net"
 	"net/http"
 )
 
 type Router struct {
+	userService *user.Service
 }
 
 func (u *Router) URL() string {
@@ -40,12 +43,22 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
+	err := u.userService.CreateUser(r.Context(), data.ToModel())
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
 	user := &User{
-		ID:    "ID_RETORNADO_DO DB",
-		Name:  data.Name,
-		Email: data.Email,
-		Phone: data.Phone,
-		Roles: data.Roles,
+		ID:         "ID_RETORNADO_DO DB",
+		Name:       data.Name,
+		Email:      data.Email,
+		Phone:      data.Phone,
+		Roles:      data.Roles,
+		FirstLogin: true,
 	}
 
 	render.Status(r, http.StatusCreated)

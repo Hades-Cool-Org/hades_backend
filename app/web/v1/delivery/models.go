@@ -34,7 +34,7 @@ func (r2 *CompleteDeliveryRequest) Bind(r *http.Request) error {
 	for _, product := range r2.Products {
 
 		if product.ID == "" {
-			return errors.New("product.ID cannot be empty")
+			return errors.New("product.UUID cannot be empty")
 		}
 
 		//todo deveria validar quantidade?
@@ -61,15 +61,15 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 func (r2 *Request) Bind(r *http.Request) error {
 
 	if r2.Vehicle.ID == "" {
-		errors.New("vehicle ID cannot be empty")
+		errors.New("vehicle UUID cannot be empty")
 	}
 
 	if r2.Order.ID == "" {
-		errors.New("order ID cannot be empty")
+		errors.New("order UUID cannot be empty")
 	}
 
 	if r2.User.ID == "" {
-		errors.New("user ID cannot be empty")
+		errors.New("user UUID cannot be empty")
 	}
 
 	return nil
