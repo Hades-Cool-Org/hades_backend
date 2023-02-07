@@ -8,6 +8,9 @@ DB Date type
 - https://stackoverflow.com/questions/3799193/mysql-data-best-way-to-implement-paging
 - https://popsql.com/learn-sql/mysql/how-to-query-date-and-time-in-mysql
 
+FORM UUID
+- https://articles.wesionary.team/implementation-of-uuid-and-binary-16-in-gorm-v2-1c329c352c91
+
 Money Type
 - https://github.com/shopspring/decimal
 

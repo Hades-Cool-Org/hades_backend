@@ -11,7 +11,7 @@ import (
 )
 
 type Router struct {
-	userService *user.Service
+	UserService *user.Service
 }
 
 func (u *Router) URL() string {
@@ -43,7 +43,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
-	err := u.userService.CreateUser(r.Context(), data.ToModel())
+	err := u.UserService.CreateUser(r.Context(), data.ToModel())
 
 	if err != nil {
 		errResponse := hades_errors.ParseErrResponse(err)

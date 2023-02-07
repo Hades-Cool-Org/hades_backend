@@ -14,10 +14,9 @@ import (
 )
 
 var (
-	TokenAuth     *jwtauth.JWTAuth
-	ttl           = 4 * time.Hour
-	l             = logger.Logger
-	base64Encoder = base64.Encoding{}
+	TokenAuth *jwtauth.JWTAuth
+	ttl       = 4 * time.Hour
+	l         = logger.Logger
 )
 
 func init() {
@@ -41,18 +40,22 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*user2
 		return nil, err
 	}
 
-	if u.Password == password {
+	encodedPass := s.EncodePassword(password)
+
+	println(encodedPass)
+
+	if s.decodePassword(u.Password) == password {
 		return &user2.Login{Token: s.encodeUserToken(u)}, nil
 	}
 	return nil, errors.New("invalid user or password")
 }
 
 func (s *AuthService) EncodePassword(password string) string {
-	return base64Encoder.EncodeToString([]byte(password))
+	return base64.StdEncoding.EncodeToString([]byte(password))
 }
 
 func (s *AuthService) decodePassword(password string) string {
-	decoded, _ := base64Encoder.DecodeString(password)
+	decoded, _ := base64.StdEncoding.DecodeString(password)
 	return string(decoded)
 }
 

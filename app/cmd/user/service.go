@@ -11,6 +11,10 @@ import (
 	"net/http"
 )
 
+const (
+	defaultPassword = "password"
+)
+
 type Service struct {
 	repository  user.Repository
 	logger      *zap.Logger
@@ -43,6 +47,7 @@ func (s *Service) CreateUser(ctx context.Context, user *user2.User) error { //TO
 	}
 
 	user.FirstLogin = true
+	user.Password = s.authService.EncodePassword(defaultPassword)
 
 	return s.repository.Create(ctx, user)
 }

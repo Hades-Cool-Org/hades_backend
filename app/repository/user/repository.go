@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"gorm.io/gorm"
 	"hades_backend/app/models/user"
 )
@@ -25,7 +26,7 @@ type MySqlRepository struct {
 
 func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	// Migrate the schema
-	db.AutoMigrate(&User{}) //TODO
+	db.AutoMigrate(&User{}, &Role{}) //TODO
 
 	return &MySqlRepository{db: db}
 }
@@ -52,10 +53,15 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id string) (*user.User, e
 func (m *MySqlRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
 	var u User
 
-	result := m.db.Where("email = ?", email).First(u)
+	result := m.db.Where("email = ?", email).First(&u)
 
-	if result.Error != nil {
-		return nil, result.Error
+	err := result.Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
 	}
 
 	return u.ToDto(), nil

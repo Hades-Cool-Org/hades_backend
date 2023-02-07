@@ -56,7 +56,7 @@ func Service(l *zap.Logger) http.Handler {
 
 		r.Route("/v1", func(r chi.Router) {
 
-			userRouter := user.Router{}
+			userRouter := user.Router{UserService: userService}
 			r.Route(userRouter.URL(), userRouter.Router())
 
 			productsRouter := product.Router{}
