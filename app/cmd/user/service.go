@@ -52,9 +52,10 @@ func (s *Service) CreateUser(ctx context.Context, user *user2.User) error { //TO
 	return s.repository.Create(ctx, user)
 }
 
-func (s *Service) UpdateUser(ctx context.Context, user *user2.User) error { //todo
+func (s *Service) UpdateUser(ctx context.Context, userId string, user *user2.User) error { //todo
 	s.logger.Info("updating user", zap.String("email", user.Email))
 
+	user.ID = userId
 	return s.repository.Update(ctx, user)
 }
 

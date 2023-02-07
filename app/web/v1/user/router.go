@@ -90,6 +90,15 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 		Roles: data.Roles,
 	}
 
+	err := u.UserService.UpdateUser(r.Context(), userId, user.ToModel())
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
 	render.Status(r, http.StatusOK)
 	render.Render(w, r, &Response{user})
 }

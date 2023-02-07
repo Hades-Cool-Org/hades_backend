@@ -39,6 +39,9 @@ func (m *MySqlRepository) Create(ctx context.Context, user *user.User) error {
 }
 
 func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
+	model := NewModel(user)
+	m.db.Delete(&Role{}, "user_id = ?", user.ID) //TODO
+	m.db.Session(&gorm.Session{FullSaveAssociations: true}).Where("id = ?", user.ID).Updates(model)
 	return nil
 }
 

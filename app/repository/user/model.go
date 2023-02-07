@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"gorm.io/gorm"
 	"hades_backend/app/models/user"
+	"strconv"
 )
 
 type User struct {
@@ -40,7 +41,7 @@ func (u *User) ToDto() *user.User {
 
 type Role struct {
 	gorm.Model
-	UserId uint   `sql:"REFERENCES users(id) ON DELETE CASCADE"`
+	UserId uint   `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE;"`
 	Name   string `gorm:"type:varchar(255);not null"`
 }
 
@@ -49,14 +50,22 @@ func NewModel(user *user.User) *User {
 	var roles []*Role
 
 	for _, role := range user.Roles {
-		roles = append(roles, &Role{Name: role.Name})
+		r := &Role{Name: role.Name}
+		roles = append(roles, r)
 	}
 
-	return &User{
+	u := &User{
 		Name:     user.Name,
 		Email:    user.Email,
 		Phone:    user.Phone,
 		Password: user.Password,
 		Roles:    roles,
 	}
+
+	if user.ID != "" {
+		x, _ := strconv.Atoi(user.ID)
+		u.ID = uint(x)
+	}
+
+	return u
 }
