@@ -17,9 +17,13 @@ var (
 
 func ParseErrResponse(err error) *net.ErrResponse {
 
+	var hadesErr *HadesError
+
+	isHadesErr := errors.As(err, &hadesErr)
+
 	status := func() int {
-		if e, ok := err.(HadesError); ok {
-			return e.Status
+		if isHadesErr {
+			return hadesErr.Status
 		}
 
 		return defaultErrorCode

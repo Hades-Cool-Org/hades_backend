@@ -5,6 +5,7 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"hades_backend/app/models/user"
+	"hades_backend/app/repository"
 )
 
 type Repository interface {
@@ -38,7 +39,7 @@ func (m *MySqlRepository) Create(ctx context.Context, user *user.User) (uint, er
 	err := m.db.Create(model).Error
 
 	if err != nil {
-		return 0, err
+		return 0, repository.ParseMysqlError("user", err)
 	}
 
 	return model.ID, nil
