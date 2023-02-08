@@ -16,6 +16,12 @@ GORM
 Money Type
 - https://github.com/shopspring/decimal
 
+SQL
+```
+SELECT GREATEST(100, MAX(id) + 1) FROM table_name INTO @autoinc;
+ALTER TABLE table_name AUTO_INCREMENT = @autoinc;
+```
+
 Docker
 
 - `docker-compose -f stack.yml up`

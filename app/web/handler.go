@@ -40,14 +40,14 @@ func Service(l *zap.Logger) http.Handler {
 
 	r.Group(func(r chi.Router) {
 
-		// Seek, verify and validate JWT tokens
-		r.Use(jwtauth.Verifier(user2.TokenAuth))
-
-		// Handle valid / invalid tokens. In this example, we use
-		// the provided authenticator middleware, but you can write your
-		// own very easily, look at the Authenticator method in jwtauth.go
-		// and tweak it, its not scary.
-		r.Use(jwtauth.Authenticator)
+		//// Seek, verify and validate JWT tokens
+		//r.Use(jwtauth.Verifier(user2.TokenAuth))
+		//
+		//// Handle valid / invalid tokens. In this example, we use
+		//// the provided authenticator middleware, but you can write your
+		//// own very easily, look at the Authenticator method in jwtauth.go
+		//// and tweak it, its not scary.
+		//r.Use(jwtauth.Authenticator)
 
 		r.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())

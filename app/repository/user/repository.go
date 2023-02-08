@@ -9,7 +9,7 @@ import (
 
 type Repository interface {
 	// Create creates a new user
-	Create(ctx context.Context, user *user.User) error
+	Create(ctx context.Context, user *user.User) (uint, error)
 	// Update updates an existing user
 	Update(ctx context.Context, user *user.User) error
 	// Delete deletes an existing user
@@ -31,11 +31,17 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	return &MySqlRepository{db: db}
 }
 
-func (m *MySqlRepository) Create(ctx context.Context, user *user.User) error {
+func (m *MySqlRepository) Create(ctx context.Context, user *user.User) (uint, error) {
 
 	model := NewModel(user)
 
-	return m.db.Create(model).Error
+	err := m.db.Create(model).Error
+
+	if err != nil {
+		return 0, err
+	}
+
+	return model.ID, nil
 }
 
 func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
@@ -56,7 +62,7 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id string) (*user.User, e
 func (m *MySqlRepository) GetByEmail(ctx context.Context, email string) (*user.User, error) {
 	var u User
 
-	result := m.db.Where("email = ?", email).First(&u)
+	result := m.db.Where("email = ?", email).Preload("Roles").First(&u)
 
 	err := result.Error
 

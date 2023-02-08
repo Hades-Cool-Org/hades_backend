@@ -4,19 +4,18 @@ import (
 	"database/sql"
 	"gorm.io/gorm"
 	"hades_backend/app/models/user"
-	"strconv"
 )
 
 type User struct {
 	gorm.Model
-	Name       string       `gorm:"type:varchar(255);not null"`
-	Email      string       `gorm:"type:varchar(255);not null"`
-	Phone      string       `gorm:"type:varchar(255);not null"`
-	Password   string       `gorm:"type:varchar(255);not null"`
+	Name       string       `gorm:"type:varchar(255);not null;"`
+	Email      string       `gorm:"type:varchar(255);not null;unique"`
+	Phone      string       `gorm:"type:varchar(255);not null;"`
+	Password   string       `gorm:"type:varchar(255);not null;"`
 	Created    int64        `gorm:"autoCreateTime:nano"`
 	Updated    int64        `gorm:"autoUpdateTime:nano"`
 	FirstLogin sql.NullBool `gorm:"default:true"`
-	Roles      []*Role      `gorm:"foreignKey:UserId"`
+	Roles      []*Role      `gorm:"foreignKey:UserId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 func (u *User) ToDto() *user.User {
@@ -28,7 +27,7 @@ func (u *User) ToDto() *user.User {
 	}
 
 	return &user.User{
-		ID:         "teste",
+		ID:         u.ID,
 		Name:       u.Name,
 		Email:      u.Email,
 		Phone:      u.Phone,
@@ -40,7 +39,7 @@ func (u *User) ToDto() *user.User {
 }
 
 type Role struct {
-	gorm.Model
+	ID     uint   `gorm:"primarykey"`
 	UserId uint   `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE;"`
 	Name   string `gorm:"type:varchar(255);not null"`
 }
@@ -62,9 +61,8 @@ func NewModel(user *user.User) *User {
 		Roles:    roles,
 	}
 
-	if user.ID != "" {
-		x, _ := strconv.Atoi(user.ID)
-		u.ID = uint(x)
+	if user.ID != 0 {
+		u.ID = user.ID
 	}
 
 	return u

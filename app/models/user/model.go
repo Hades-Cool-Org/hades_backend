@@ -3,7 +3,7 @@ package user
 import "time"
 
 type User struct {
-	ID         string
+	ID         uint
 	Name       string
 	Email      string
 	Phone      string
@@ -14,6 +14,7 @@ type User struct {
 }
 
 type Role struct {
+	ID   uint
 	Name string
 }
 

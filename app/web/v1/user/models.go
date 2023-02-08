@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	ID         string   `json:"id"`
+	ID         uint     `json:"id"`
 	Name       string   `json:"name"`
 	Password   string   `json:"password"`
 	Email      string   `json:"email"`
@@ -24,8 +24,7 @@ func (u *User) ToModel() *user.User {
 		roles = append(roles, &user.Role{Name: role.Name})
 	}
 
-	return &user.User{
-		ID:         u.ID,
+	user2 := &user.User{
 		Name:       u.Name,
 		Email:      u.Email,
 		Phone:      u.Phone,
@@ -34,6 +33,11 @@ func (u *User) ToModel() *user.User {
 		FirstLogin: u.FirstLogin,
 	}
 
+	if u.ID != 0 {
+		user2.ID = u.ID
+	}
+
+	return user2
 }
 
 type Roles struct {
