@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
-	"hades_backend/app/logger"
 	"os"
 )
 
@@ -29,7 +28,6 @@ type Config struct {
 }
 
 func newConfig() *Config {
-	logger.Logger.Info("Loading config")
 	var cfg Config
 	readFile(&cfg)
 	readEnv(&cfg)

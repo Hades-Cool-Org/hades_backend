@@ -10,12 +10,15 @@ import (
 
 func ParseMysqlError(entity string, err error) error {
 
+	if err == nil {
+		return nil
+	}
+
 	var mysqlErr *mysql.MySQLError
 
 	isMysqlError := errors.As(err, &mysqlErr)
 
 	if isMysqlError {
-
 		switch mysqlErr.Number {
 		case 1062:
 			return hades_errors.NewHadesError(errors.New(fmt.Sprintf("%s already exists", entity)), http.StatusConflict)

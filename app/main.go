@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"hades_backend/api"
 	"hades_backend/app/config"
-	"hades_backend/app/logger"
-	"hades_backend/app/web"
+	"hades_backend/app/logging"
 	"log"
 	"net/http"
 	"os"
@@ -16,13 +16,13 @@ import (
 
 func main() {
 
-	l := logger.Logger
+	l := logging.Initialize()
 	//  configs
 	newConfig := config.Cfg
 
 	// The HTTP Server
 	l.Info("starting server")
-	server := &http.Server{Addr: fmt.Sprintf("%s:%s", newConfig.Server.Host, newConfig.Server.Port), Handler: web.Service(l)}
+	server := &http.Server{Addr: fmt.Sprintf("%s:%s", newConfig.Server.Host, newConfig.Server.Port), Handler: api.Handler(l)}
 
 	// Server run context
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())

@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
-	"hades_backend/app/logger"
+	"hades_backend/app/hades_errors"
+	"hades_backend/app/logging"
 	user2 "hades_backend/app/model/user"
 	"hades_backend/app/repository/user"
 	"time"
@@ -16,7 +16,6 @@ import (
 var (
 	TokenAuth *jwtauth.JWTAuth
 	ttl       = 4 * time.Hour
-	l         = logger.Logger
 )
 
 func init() {
@@ -33,11 +32,17 @@ func NewAuth(r user.Repository) *AuthService {
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (*user2.Login, error) {
 
+	logger := logging.FromContext(ctx)
+
 	u, err := s.repository.GetByEmail(ctx, email)
 
 	if err != nil {
-		l.Error("error getting u by email", zap.Error(err))
+		logger.Error("error getting u by email", zap.Error(err))
 		return nil, err
+	}
+
+	if u == nil {
+		return nil, hades_errors.NewForbiddenError(errors.New("invalid user or password"))
 	}
 
 	encodedPass := s.EncodePassword(password)
@@ -47,7 +52,8 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*user2
 	if s.decodePassword(u.Password) == password {
 		return &user2.Login{Token: s.encodeUserToken(u)}, nil
 	}
-	return nil, errors.New("invalid user or password")
+
+	return nil, hades_errors.NewForbiddenError(errors.New("invalid user or password"))
 }
 
 func (s *AuthService) EncodePassword(password string) string {
@@ -73,8 +79,6 @@ func (s *AuthService) encodeUserToken(user *user2.User) string {
 		"roles":   roles,
 		"exp":     time.Now().UTC().Add(ttl).Unix(),
 	})
-
-	fmt.Printf("DEBUG: a sample jwt is %s\n\n", tokenString)
 
 	return tokenString
 }

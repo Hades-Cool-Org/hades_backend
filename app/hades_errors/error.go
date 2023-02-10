@@ -3,7 +3,9 @@ package hades_errors
 import (
 	"errors"
 	"fmt"
-	"hades_backend/app/web/utils/net"
+	"go.uber.org/zap"
+	"hades_backend/api/utils/net"
+	"hades_backend/app/logging"
 	"net/http"
 )
 
@@ -13,6 +15,8 @@ var (
 	ErrNotFound = func(entity string) error {
 		return NewNotFoundError(errors.New(fmt.Sprintf("%s not found", entity)))
 	}
+
+	l = logging.Initialize()
 )
 
 func ParseErrResponse(err error) *net.ErrResponse {
@@ -45,6 +49,7 @@ type HadesError struct {
 }
 
 func NewHadesError(err error, status int) *HadesError {
+	l.Error("got an error -> "+err.Error(), zap.Int("status", status))
 	if err == nil {
 		err = errors.New("unknown error")
 	}
