@@ -7,8 +7,10 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
 	user2 "hades_backend/app/cmd/user"
+	vendorsCmd "hades_backend/app/cmd/vendors"
 	"hades_backend/app/driver"
 	user3 "hades_backend/app/repository/user"
+	vendorsRepository "hades_backend/app/repository/vendors"
 	customMiddleware "hades_backend/app/web/middleware"
 	"hades_backend/app/web/utils"
 	"hades_backend/app/web/v1/login"
@@ -22,6 +24,7 @@ var (
 	db             = driver.DB
 	userRepository = user3.NewMySqlRepository(db)
 	userService    = user2.NewService(userRepository)
+	vendorService  = vendorsCmd.NewService(vendorsRepository.NewMySqlRepository(db))
 )
 
 func Service(l *zap.Logger) http.Handler {
@@ -56,13 +59,13 @@ func Service(l *zap.Logger) http.Handler {
 
 		r.Route("/v1", func(r chi.Router) {
 
-			userRouter := user.Router{UserService: userService}
+			userRouter := initUserRouter()
 			r.Route(userRouter.URL(), userRouter.Router())
 
 			productsRouter := product.Router{}
 			r.Route(productsRouter.URL(), productsRouter.Router())
 
-			vendorsRouter := vendors.Router{}
+			vendorsRouter := initVendorsRouter()
 			r.Route(vendorsRouter.URL(), vendorsRouter.Router())
 		})
 	})
@@ -73,4 +76,12 @@ func Service(l *zap.Logger) http.Handler {
 
 func initLoginRouter() *login.Router {
 	return login.NewRouter(userService)
+}
+
+func initUserRouter() *user.Router {
+	return user.NewRouter(userService)
+}
+
+func initVendorsRouter() *vendors.Router {
+	return vendors.NewRouter(vendorService)
 }

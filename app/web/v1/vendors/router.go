@@ -4,11 +4,20 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"hades_backend/app/cmd/vendors"
+	"hades_backend/app/hades_errors"
+	vendors2 "hades_backend/app/model/vendors"
 	"hades_backend/app/web/utils/net"
 	"net/http"
+	"strconv"
 )
 
 type Router struct {
+	service *vendors.Service
+}
+
+func NewRouter(service *vendors.Service) *Router {
+	return &Router{service: service}
 }
 
 func (u *Router) URL() string {
@@ -28,30 +37,18 @@ func (u *Router) Router() func(r chi.Router) {
 }
 
 func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
-	//db search
-	vendors := []*Vendor{
-		{
-			ID:       "ID_RETORNADO_DO_BANCO",
-			Name:     "Vendor1",
-			Email:    "Vendor1@gmail.com",
-			Phone:    "+5519999999999",
-			Cnpj:     "23232323232",
-			Type:     "CEASA",
-			Location: "pavilhão 3, box 18",
-		},
-		{
-			ID:       "ID_RETORNADO_DO_BANCO",
-			Name:     "Vendor2",
-			Email:    "Vendor2@gmail.com",
-			Phone:    "+5519999999999",
-			Cnpj:     "23232323232",
-			Type:     "EXTERNO",
-			Location: "Rua 30 de julho numero 430",
-		},
+
+	vs, err := u.service.GetVendors(r.Context())
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &GetAllResponse{vendors})
+	render.Render(w, r, &GetAllResponse{vs})
 }
 
 func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
@@ -62,15 +59,20 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db search 404 when empty
-	vendor := &Vendor{
-		ID:       vendorId,
-		Name:     "Vendor1",
-		Email:    "Vendor1@gmail.com",
-		Phone:    "+5519999999999",
-		Cnpj:     "23232323232",
-		Type:     "CEASA",
-		Location: "pavilhão 3, box 18",
+	vendorIdInt, err := strconv.Atoi(vendorId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("vendorId is not a number: "+err.Error())))
+		return
+	}
+
+	vendor, err := u.service.GetVendor(r.Context(), uint(vendorIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -86,15 +88,20 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db save
-	vendor := &Vendor{
-		ID:       "ID_RETORNADO_DO_BANCO",
-		Name:     "Vendor1",
-		Email:    "Vendor1@gmail.com",
-		Phone:    "+5519999999999",
-		Cnpj:     "23232323232",
-		Type:     "CEASA",
-		Location: "pavilhão 3, box 18",
+	vendorId, err := u.service.CreateVendor(r.Context(), data.Vendor)
+	if err != nil {
+		return
+	}
+
+	vendor := &vendors2.Vendor{
+		ID:       vendorId,
+		Name:     data.Name,
+		Phone:    data.Phone,
+		Type:     data.Type,
+		Location: data.Location,
+		Contact:  data.Contact,
+		Email:    data.Email,
+		Cnpj:     data.Cnpj,
 	}
 
 	render.Status(r, http.StatusCreated)
@@ -117,15 +124,31 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db update
-	vendor := &Vendor{
-		ID:       vendorId,
+	vendorIdInt, err := strconv.Atoi(vendorId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("vendorId is not a number: "+err.Error())))
+		return
+	}
+
+	err = u.service.UpdateVendor(r.Context(), uint(vendorIdInt), data.Vendor)
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
+	vendor := &vendors2.Vendor{
+		ID:       uint(vendorIdInt),
 		Name:     data.Name,
-		Email:    data.Email,
 		Phone:    data.Phone,
-		Cnpj:     data.Cnpj,
 		Type:     data.Type,
 		Location: data.Location,
+		Contact:  data.Contact,
+		Email:    data.Email,
+		Cnpj:     data.Cnpj,
 	}
 
 	render.Status(r, http.StatusOK)
@@ -138,6 +161,22 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if vendorId == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("vendorId is empty")))
+		return
+	}
+
+	vendorIdInt, err := strconv.Atoi(vendorId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("vendorId is not a number: "+err.Error())))
+		return
+	}
+
+	err = u.service.DeleteVendor(r.Context(), uint(vendorIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
 		return
 	}
 

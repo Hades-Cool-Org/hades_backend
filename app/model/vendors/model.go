@@ -1,7 +1,7 @@
 package vendors
 
 type Vendor struct {
-	ID       string   `json:"id"`
+	ID       uint     `json:"id"`
 	Name     string   `json:"name"`
 	Email    string   `json:"email"`
 	Phone    string   `json:"phone"`

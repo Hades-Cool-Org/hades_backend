@@ -16,6 +16,10 @@ type Router struct {
 	UserService *user.Service
 }
 
+func NewRouter(service *user.Service) *Router {
+	return &Router{UserService: service}
+}
+
 func (r2 *Router) URL() string {
 	return "/users"
 }
@@ -121,7 +125,52 @@ func (r2 *Router) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userIdInt, err := strconv.Atoi(userId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("userId is not a number: "+err.Error())))
+		return
+	}
+
 	//db delete user
+	err = r2.UserService.DeleteUser(r.Context(), uint(userIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
 
 	render.Status(r, http.StatusNoContent)
+}
+
+func (r2 *Router) Get(w http.ResponseWriter, r *http.Request) {
+
+	userId := chi.URLParam(r, userIdParam)
+
+	if userId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("userId is empty")))
+		return
+	}
+
+	userIdInt, err := strconv.Atoi(userId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("userId is not a number: "+err.Error())))
+		return
+	}
+
+	//db get user
+	u, err := r2.UserService.GetUser(r.Context(), uint(userIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &Response{u})
 }
