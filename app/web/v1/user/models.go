@@ -2,58 +2,20 @@ package user
 
 import (
 	"errors"
-	"hades_backend/app/models/user"
+	"hades_backend/app/model/user"
 	"net/http"
 )
 
-type User struct {
-	ID         uint     `json:"id"`
-	Name       string   `json:"name"`
-	Password   string   `json:"password"`
-	Email      string   `json:"email"`
-	Phone      string   `json:"phone"`
-	Roles      []*Roles `json:"roles"`
-	FirstLogin bool     `json:"first_login"`
-}
-
-func (u *User) ToModel() *user.User {
-
-	var roles []*user.Role
-
-	for _, role := range u.Roles {
-		roles = append(roles, &user.Role{Name: role.Name})
-	}
-
-	user2 := &user.User{
-		Name:       u.Name,
-		Email:      u.Email,
-		Phone:      u.Phone,
-		Password:   u.Password,
-		Roles:      roles,
-		FirstLogin: u.FirstLogin,
-	}
-
-	if u.ID != 0 {
-		user2.ID = u.ID
-	}
-
-	return user2
-}
-
-type Roles struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 type Request struct {
-	*User
+	*user.User
 }
 
 type Response struct {
-	*User
+	*user.User
 }
 
 func (u *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	u.Password = "***"
 	return nil
 }
 

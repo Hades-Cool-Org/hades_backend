@@ -4,17 +4,17 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"hades_backend/app/logger"
-	user2 "hades_backend/app/models/user"
-	"hades_backend/app/repository/user"
+	"hades_backend/app/model/user"
+	repository "hades_backend/app/repository/user"
 )
 
 type Service struct {
-	repository  user.Repository
+	repository  repository.Repository
 	logger      *zap.Logger
 	authService *AuthService
 }
 
-func NewService(r user.Repository) *Service {
+func NewService(r repository.Repository) *Service {
 	return &Service{
 		repository:  r,
 		logger:      logger.Logger,
@@ -22,11 +22,11 @@ func NewService(r user.Repository) *Service {
 	}
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (*user2.Login, error) {
+func (s *Service) Login(ctx context.Context, email, password string) (*user.Login, error) {
 	return s.authService.Login(ctx, email, password)
 }
 
-func (s *Service) CreateUser(ctx context.Context, user *user2.User) (uint, error) { //TODO: ROLES as enum
+func (s *Service) CreateUser(ctx context.Context, user *user.User) (uint, error) { //TODO: ROLES as enum
 	s.logger.Info("creating user", zap.String("email", user.Email))
 
 	user.FirstLogin = true
@@ -41,20 +41,20 @@ func (s *Service) CreateUser(ctx context.Context, user *user2.User) (uint, error
 	return id, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, userId uint, user *user2.User) error { //todo
+func (s *Service) UpdateUser(ctx context.Context, userId uint, user *user.User) error { //todo
 	s.logger.Info("updating user", zap.String("email", user.Email), zap.Uint("id", userId))
 	user.ID = userId
 	return s.repository.Update(ctx, user)
 }
 
-func (s *Service) GetUser(ctx context.Context, id string) (*user2.User, error) { //todo
-	s.logger.Info("getting user", zap.String("id", id))
+func (s *Service) GetUser(ctx context.Context, id uint) (*user.User, error) { //todo
+	s.logger.Info("getting user", zap.Uint("id", id))
 
 	return s.repository.GetByID(ctx, id)
 }
 
-func (s *Service) DeleteUser(ctx context.Context, id string) error { //todo
-	s.logger.Info("deleting user", zap.String("id", id))
+func (s *Service) DeleteUser(ctx context.Context, id uint) error { //todo
+	s.logger.Info("deleting user", zap.Uint("id", id))
 
 	return s.repository.Delete(ctx, id)
 }

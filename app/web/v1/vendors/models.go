@@ -2,28 +2,12 @@ package vendors
 
 import (
 	"errors"
+	"hades_backend/app/model/vendors"
 	"net/http"
 )
 
-type Vendor struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Cnpj     string `json:"cnpj"`
-	Type     string `json:"type"`
-	Location string `json:"location"`
-	Contact  *User  `json:"contact"`
-}
-
-type User struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
-}
-
 type Request struct {
-	*Vendor
+	*vendors.Vendor
 }
 
 func (v *Request) Bind(r *http.Request) error {
@@ -48,11 +32,11 @@ func (v *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	*Vendor
+	*vendors.Vendor
 }
 
 type GetAllResponse struct {
-	Vendors []*Vendor `json:"vendors"`
+	Vendors []*vendors.Vendor `json:"vendors"`
 }
 
 func (p *GetAllResponse) Render(w http.ResponseWriter, r *http.Request) error {

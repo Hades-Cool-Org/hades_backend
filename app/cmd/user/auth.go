@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
 	"hades_backend/app/logger"
-	user2 "hades_backend/app/models/user"
+	user2 "hades_backend/app/model/user"
 	"hades_backend/app/repository/user"
 	"time"
 )

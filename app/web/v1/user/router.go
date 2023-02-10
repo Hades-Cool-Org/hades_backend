@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/app/cmd/user"
 	"hades_backend/app/hades_errors"
+	userModel "hades_backend/app/model/user"
 	"hades_backend/app/web/utils/net"
 	"net/http"
 	"strconv"
@@ -44,7 +45,7 @@ func (r2 *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
-	id, err := r2.UserService.CreateUser(r.Context(), data.ToModel())
+	id, err := r2.UserService.CreateUser(r.Context(), data.User)
 
 	if err != nil {
 		errResponse := hades_errors.ParseErrResponse(err)
@@ -53,7 +54,7 @@ func (r2 *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u := &User{
+	u := &userModel.User{
 		ID:         id,
 		Name:       data.Name,
 		Email:      data.Email,
@@ -89,8 +90,8 @@ func (r2 *Router) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db update user
-	user := &User{
+	//db update u
+	u := &userModel.User{
 		ID:    uint(userIdInt),
 		Name:  data.Name,
 		Email: data.Email,
@@ -98,7 +99,7 @@ func (r2 *Router) Update(w http.ResponseWriter, r *http.Request) {
 		Roles: data.Roles,
 	}
 
-	err = r2.UserService.UpdateUser(r.Context(), uint(userIdInt), user.ToModel())
+	err = r2.UserService.UpdateUser(r.Context(), uint(userIdInt), u)
 
 	if err != nil {
 		errResponse := hades_errors.ParseErrResponse(err)
@@ -108,7 +109,7 @@ func (r2 *Router) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{user})
+	render.Render(w, r, &Response{u})
 }
 
 func (r2 *Router) Delete(w http.ResponseWriter, r *http.Request) {

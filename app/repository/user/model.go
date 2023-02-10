@@ -3,7 +3,7 @@ package user
 import (
 	"database/sql"
 	"gorm.io/gorm"
-	"hades_backend/app/models/user"
+	"hades_backend/app/model/user"
 )
 
 type User struct {
