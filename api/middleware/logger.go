@@ -3,6 +3,7 @@ package middleware
 import (
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"hades_backend/app/logging"
 	"net/http"
 	"time"
 )
@@ -25,6 +26,8 @@ func Logger(l *zap.Logger) func(next http.Handler) http.Handler {
 					zap.Int("size", ww.BytesWritten()),
 					zap.String("reqId", middleware.GetReqID(r.Context())))
 			}()
+
+			r = r.WithContext(logging.WithLogger(r.Context(), l))
 
 			next.ServeHTTP(ww, r)
 		}
