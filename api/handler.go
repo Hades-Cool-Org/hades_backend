@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 	customMiddleware "hades_backend/api/middleware"
-	v1 "hades_backend/api/v1"
 	"hades_backend/app/database"
 	"net/http"
 )
@@ -26,7 +25,7 @@ func Handler(l *zap.Logger) http.Handler {
 	})
 
 	// Creating mysql default handler
-	mysqlHandler := v1.NewMySQLHandler(db)
+	mysqlHandler := NewMySQLHandler(db)
 
 	r.Group(mysqlHandler.Handle)
 

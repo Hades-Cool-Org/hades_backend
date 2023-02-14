@@ -2,7 +2,6 @@ package hades_errors
 
 import (
 	"errors"
-	"fmt"
 	"go.uber.org/zap"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/logging"
@@ -11,10 +10,6 @@ import (
 
 var (
 	defaultErrorCode = 500
-
-	ErrNotFound = func(entity string) error {
-		return NewNotFoundError(errors.New(fmt.Sprintf("%s not found", entity)))
-	}
 
 	l = logging.Initialize()
 )
