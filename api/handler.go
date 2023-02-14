@@ -54,7 +54,6 @@ func Handler(l *zap.Logger) http.Handler {
 			userRouter := initUserRouter()
 			r.Route(userRouter.URL(), userRouter.Router())
 
-			productsRouter := product.Router{}
 			r.Route(productsRouter.URL(), productsRouter.Router())
 
 			vendorsRouter := initVendorsRouter()

@@ -12,8 +12,6 @@ type User struct {
 	Email      string       `gorm:"type:varchar(255);not null;unique"`
 	Phone      string       `gorm:"type:varchar(255);not null;"`
 	Password   string       `gorm:"type:varchar(255);not null;"`
-	Created    int64        `gorm:"autoCreateTime:nano"`
-	Updated    int64        `gorm:"autoUpdateTime:nano"`
 	FirstLogin sql.NullBool `gorm:"default:true"`
 	Roles      []*Role      `gorm:"foreignKey:UserId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }

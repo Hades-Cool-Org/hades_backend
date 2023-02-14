@@ -47,7 +47,7 @@ func (m *MySqlRepository) Create(ctx context.Context, vendor *vendors.Vendor) (u
 
 func (m *MySqlRepository) Update(ctx context.Context, vendor *vendors.Vendor) error {
 	model := ToModel(vendor)
-	if err := m.db.Where("id = ?", vendor.ID).Updates(model).Error; err != nil {
+	if err := m.db.Updates(model).Error; err != nil {
 		return repository.ParseMysqlError("vendor", err)
 	}
 	return nil

@@ -2,19 +2,12 @@ package product
 
 import (
 	"errors"
+	"hades_backend/app/model/product"
 	"net/http"
 )
 
-type Product struct {
-	ID            string `json:"id"`
-	Name          string `json:"name"`
-	Details       string `json:"details"`
-	Image         string `json:"image_url"`
-	MeasuringUnit string `json:"measuring_unit"`
-}
-
 type Request struct {
-	*Product
+	*product.Product
 }
 
 func (p *Request) Bind(r *http.Request) error {
@@ -30,11 +23,11 @@ func (p *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	*Product
+	*product.Product
 }
 
 type GetAllResponse struct {
-	Products []*Product `json:"products"`
+	Products []*product.Product `json:"products"`
 }
 
 func (p *GetAllResponse) Render(w http.ResponseWriter, r *http.Request) error {

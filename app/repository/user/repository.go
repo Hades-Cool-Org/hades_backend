@@ -54,7 +54,7 @@ func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 				return err
 			}
 
-			if err := tx.Where("id = ?", user.ID).Updates(model).Error; err != nil {
+			if err := tx.Updates(model).Error; err != nil {
 				return err
 			}
 
