@@ -46,7 +46,7 @@ func (m *MySqlRepository) Create(ctx context.Context, product *product.Product) 
 
 func (m *MySqlRepository) Update(ctx context.Context, product *product.Product) error {
 	model := NewModel(product)
-	if err := m.db.Where("id = ?", product.ID).Updates(model).Error; err != nil {
+	if err := m.db.Updates(model).Error; err != nil {
 		return repository.ParseMysqlError("product", err)
 	}
 	return nil

@@ -3,27 +3,15 @@ package api
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
 	customMiddleware "hades_backend/api/middleware"
-	"hades_backend/api/utils"
-	"hades_backend/api/v1/login"
-	"hades_backend/api/v1/product"
-	"hades_backend/api/v1/user"
-	"hades_backend/api/v1/vendors"
-	user2 "hades_backend/app/cmd/user"
-	vendorsCmd "hades_backend/app/cmd/vendors"
+	v1 "hades_backend/api/v1"
 	"hades_backend/app/database"
-	user3 "hades_backend/app/repository/user"
-	vendorsRepository "hades_backend/app/repository/vendors"
 	"net/http"
 )
 
 var (
-	db             = database.DB
-	userRepository = user3.NewMySqlRepository(db)
-	userService    = user2.NewService(userRepository)
-	vendorService  = vendorsCmd.NewService(vendorsRepository.NewMySqlRepository(db))
+	db = database.DB
 )
 
 func Handler(l *zap.Logger) http.Handler {
@@ -37,42 +25,11 @@ func Handler(l *zap.Logger) http.Handler {
 		w.Write([]byte("pong"))
 	})
 
-	loginRouter := initLoginRouter()
-	r.Route(loginRouter.URL(), loginRouter.Router())
+	// Creating mysql default handler
+	mysqlHandler := v1.NewMySQLHandler(db)
 
-	r.Group(func(r chi.Router) {
+	r.Group(mysqlHandler.Handle)
 
-		// Seek, verify and validate JWT tokens
-		r.Use(jwtauth.Verifier(user2.TokenAuth))
-		// Handle valid / invalid tokens.
-		r.Use(jwtauth.Authenticator)
-		// Extract user
-		r.Use(customMiddleware.User)
-
-		r.Route("/v1", func(r chi.Router) {
-
-			userRouter := initUserRouter()
-			r.Route(userRouter.URL(), userRouter.Router())
-
-			r.Route(productsRouter.URL(), productsRouter.Router())
-
-			vendorsRouter := initVendorsRouter()
-			r.Route(vendorsRouter.URL(), vendorsRouter.Router())
-		})
-	})
-
-	utils.GenerateDocs(r)
+	//utils.GenerateDocs(r)
 	return r
-}
-
-func initLoginRouter() *login.Router {
-	return login.NewRouter(userService)
-}
-
-func initUserRouter() *user.Router {
-	return user.NewRouter(userService)
-}
-
-func initVendorsRouter() *vendors.Router {
-	return vendors.NewRouter(vendorService)
 }

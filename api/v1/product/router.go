@@ -5,10 +5,20 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
+	"hades_backend/app/cmd/product"
+	"hades_backend/app/hades_errors"
+
+	productModel "hades_backend/app/model/product"
 	"net/http"
+	"strconv"
 )
 
 type Router struct {
+	service *product.Service
+}
+
+func NewRouter(service *product.Service) *Router {
+	return &Router{service: service}
 }
 
 func (u *Router) URL() string {
@@ -29,21 +39,13 @@ func (u *Router) Router() func(r chi.Router) {
 
 func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	//db search
-	products := []*Product{
-		{
-			ID:            "ID_RETORNADO_DO_BANCO",
-			Name:          "product1",
-			Details:       "details",
-			Image:         "url",
-			MeasuringUnit: "UN",
-		},
-		{
-			ID:            "ID_RETORNADO_DO_BANCO_2",
-			Name:          "product2",
-			Details:       "details",
-			Image:         "url",
-			MeasuringUnit: "UN",
-		},
+	products, err := u.service.GetProducts(r.Context())
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -58,17 +60,24 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db search 404 when empty
-	product := &Product{
-		ID:            productId,
-		Name:          "product2",
-		Details:       "details",
-		Image:         "url",
-		MeasuringUnit: "UN",
+	productIdInt, err := strconv.Atoi(productId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
+		return
+	}
+
+	p, err := u.service.GetProduct(r.Context(), uint(productIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{product})
+	render.Render(w, r, &Response{p})
 }
 
 func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
@@ -81,8 +90,16 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
-	product := &Product{
-		ID:            "ID_RETORNADO_DO_BANCO",
+	p, err := u.service.CreateProduct(r.Context(), data.Product)
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
+	productResp := &productModel.Product{
+		ID:            p,
 		Name:          data.Name,
 		Details:       data.Details,
 		Image:         data.Image,
@@ -90,7 +107,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &Response{product})
+	render.Render(w, r, &Response{productResp})
 }
 
 func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
@@ -109,9 +126,25 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db update
-	product := &Product{
-		ID:            productId,
+	productIdInt, err := strconv.Atoi(productId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
+		return
+	}
+
+	id := uint(productIdInt)
+	err = u.service.UpdateProduct(r.Context(), id, data.Product)
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
+	productResp := &productModel.Product{
+		ID:            id,
 		Name:          data.Name,
 		Details:       data.Details,
 		Image:         data.Image,
@@ -119,7 +152,7 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{product})
+	render.Render(w, r, &Response{productResp})
 }
 
 func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
@@ -128,6 +161,22 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if productId == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
+		return
+	}
+
+	productIdInt, err := strconv.Atoi(productId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
+		return
+	}
+
+	err = u.service.DeleteProduct(r.Context(), uint(productIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
 		return
 	}
 
