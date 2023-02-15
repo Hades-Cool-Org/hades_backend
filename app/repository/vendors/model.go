@@ -17,9 +17,9 @@ type Vendor struct {
 }
 
 type Contact struct {
-	Name  string `gorm:"type:varchar(255);"`
-	Email string `gorm:"type:varchar(255);"`
-	Phone string `gorm:"type:varchar(255);"`
+	Name  *string `gorm:"type:varchar(255);"`
+	Email *string `gorm:"type:varchar(255);"`
+	Phone *string `gorm:"type:varchar(255);"`
 }
 
 func (v *Vendor) ToDTO() *vendors.Vendor {
@@ -47,11 +47,14 @@ func ToModel(vendor *vendors.Vendor) *Vendor {
 		Cnpj:     vendor.Cnpj,
 		Type:     vendor.Type,
 		Location: vendor.Location,
-		Contact: &Contact{
+	}
+
+	if vendor.Contact != nil {
+		v.Contact = &Contact{
 			Name:  vendor.Contact.Name,
 			Email: vendor.Contact.Email,
 			Phone: vendor.Contact.Phone,
-		},
+		}
 	}
 
 	if vendor.ID != 0 {

@@ -49,14 +49,14 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 	loginRouter := m.initLoginRouter()
 	r.Route(loginRouter.URL(), loginRouter.Router())
 
-	// Seek, verify and validate JWT tokens
-	r.Use(jwtauth.Verifier(userService.TokenAuth))
-	// Handle valid / invalid tokens.
-	r.Use(jwtauth.Authenticator)
-	// Extract user
-	r.Use(customMiddleware.User)
-
 	r.Route("/v1", func(r chi.Router) {
+
+		// Seek, verify and validate JWT tokens
+		r.Use(jwtauth.Verifier(userService.TokenAuth))
+		// Handle valid / invalid tokens.
+		r.Use(jwtauth.Authenticator)
+		// Extract user
+		r.Use(customMiddleware.User)
 
 		userRouter := m.initUserRouter()
 		r.Route(userRouter.URL(), userRouter.Router())

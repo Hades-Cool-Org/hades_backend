@@ -90,6 +90,9 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 
 	vendorId, err := u.service.CreateVendor(r.Context(), data.Vendor)
 	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
 		return
 	}
 
