@@ -57,7 +57,6 @@ func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 			if err := tx.Updates(model).Error; err != nil {
 				return err
 			}
-
 			return nil
 		}),
 	)
@@ -71,7 +70,6 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 
 func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*user.User, error) {
 	var u User
-
 	if err := m.db.Where("id = ?", id).Preload("Roles").First(&u).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil

@@ -48,7 +48,6 @@ func (s *Service) UpdateUser(ctx context.Context, userId uint, user *user.User) 
 }
 
 func (s *Service) GetUser(ctx context.Context, id uint) (*user.User, error) { //todo
-
 	logger := logging.FromContext(ctx)
 	logger.Info("getting user", zap.Uint("id", id))
 

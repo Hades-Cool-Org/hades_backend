@@ -75,9 +75,6 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*vendors.Vendor
 func (m *MySqlRepository) GetAll(ctx context.Context) ([]*vendors.Vendor, error) {
 	var models []Vendor
 	if err := m.db.Find(&models).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
 		return nil, repository.ParseMysqlError("vendor", err)
 	}
 

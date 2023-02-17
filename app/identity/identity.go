@@ -5,9 +5,15 @@ type Identity struct {
 	Roles  []string
 }
 
+const (
+	roleAdmin  = "admin"
+	roleBuyer  = "buyer"
+	roleDriver = "driver"
+)
+
 func (i *Identity) IsAdmin() bool {
 	for _, role := range i.Roles {
-		if role == "admin" {
+		if role == roleAdmin {
 			return true
 		}
 	}
@@ -16,7 +22,7 @@ func (i *Identity) IsAdmin() bool {
 
 func (i *Identity) IsBuyer() bool {
 	for _, role := range i.Roles {
-		if role == "buyer" {
+		if role == roleBuyer {
 			return true
 		}
 	}
@@ -25,7 +31,7 @@ func (i *Identity) IsBuyer() bool {
 
 func (i *Identity) IsDriver() bool {
 	for _, role := range i.Roles {
-		if role == "driver" {
+		if role == roleDriver {
 			return true
 		}
 	}

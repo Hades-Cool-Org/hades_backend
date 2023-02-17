@@ -3,29 +3,16 @@ package store
 import (
 	"errors"
 	"net/http"
+
+	"hades_backend/app/model/store"
 )
 
-type Store struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	Address  string  `json:"address"`
-	User     *User   `json:"user"` //gerente da loja
-	Couriers []*User `json:"couriers"`
-}
-
-type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
-}
-
 type Request struct {
-	*Store
+	*store.Store
 }
 
 type AddCourierRequest struct {
-	Couriers []*User `json:"couriers"`
+	Couriers []*store.User `json:"couriers"`
 }
 
 func (a *AddCourierRequest) Bind(r *http.Request) error {
@@ -35,8 +22,8 @@ func (a *AddCourierRequest) Bind(r *http.Request) error {
 	}
 
 	for _, courier := range a.Couriers {
-		if courier.ID == "" {
-			return errors.New("courier.UUID cannot be empty")
+		if courier.ID == 0 {
+			return errors.New("courier.ID cannot be empty")
 		}
 	}
 
@@ -53,14 +40,14 @@ func (r2 *Request) Bind(r *http.Request) error {
 		return errors.New("address cannot be empty")
 	}
 
-	if r2.User.ID == "" {
+	if r2.User.ID == 0 {
 		return errors.New("user cannot be empty")
 	}
 	return nil
 }
 
 type Response struct {
-	*Store
+	*store.Store
 }
 
 func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
@@ -68,7 +55,7 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type GetAllResponse struct {
-	Stores []*Store `json:"stores"`
+	Stores []*store.Store `json:"stores"`
 }
 
 func (g *GetAllResponse) Render(w http.ResponseWriter, r *http.Request) error {
