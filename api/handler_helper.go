@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/jwtauth/v5"
 	"gorm.io/gorm"
 	customMiddleware "hades_backend/api/middleware"
 	"hades_backend/api/v1/login"
@@ -13,6 +12,7 @@ import (
 	userService "hades_backend/app/cmd/user"
 	vendorsCmd "hades_backend/app/cmd/vendors"
 	productRepository "hades_backend/app/repository/product"
+	"hades_backend/app/repository/store"
 	userRepository "hades_backend/app/repository/user"
 	vendorsRepository "hades_backend/app/repository/vendors"
 )
@@ -41,6 +41,8 @@ func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
 	pRepository := productRepository.NewMySqlRepository(db)
 	h.productService = productService.NewService(pRepository)
 
+	_ = store.NewMySqlRepository(db)
+
 	return h
 }
 
@@ -52,9 +54,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 	r.Route("/v1", func(r chi.Router) {
 
 		// Seek, verify and validate JWT tokens
-		r.Use(jwtauth.Verifier(userService.TokenAuth))
+		r.Use(customMiddleware.Verifier(userService.TokenAuth))
 		// Handle valid / invalid tokens.
-		r.Use(jwtauth.Authenticator)
+		r.Use(customMiddleware.Authenticator)
 		// Extract user
 		r.Use(customMiddleware.User)
 

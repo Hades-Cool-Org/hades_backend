@@ -25,6 +25,7 @@ type Config struct {
 		Password string `yaml:"pass", envconfig:"DB_PASSWORD"`
 		DbName   string `yaml:"db_name", envconfig:"DB_NAME"`
 	} `yaml:"database"`
+	Env string `yaml:"env", envconfig:"ENV"`
 }
 
 func newConfig() *Config {

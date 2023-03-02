@@ -13,7 +13,7 @@ type User struct {
 	Phone      string       `gorm:"type:varchar(255);not null;"`
 	Password   string       `gorm:"type:varchar(255);not null;"`
 	FirstLogin sql.NullBool `gorm:"default:true"`
-	Roles      []*Role      `gorm:"foreignKey:UserId;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Roles      []*Role
 }
 
 func (u *User) ToDto() *user.User {
@@ -37,8 +37,8 @@ func (u *User) ToDto() *user.User {
 }
 
 type Role struct {
-	ID     uint   `gorm:"primarykey"`
-	UserId uint   `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE;"`
+	gorm.Model
+	UserID uint
 	Name   string `gorm:"type:varchar(255);not null"`
 }
 

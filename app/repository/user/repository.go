@@ -53,7 +53,6 @@ func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 			if err := tx.Delete(&Role{}, "user_id = ?", user.ID).Error; err != nil {
 				return err
 			}
-
 			if err := tx.Updates(model).Error; err != nil {
 				return err
 			}
@@ -64,7 +63,7 @@ func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 
 func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 	return repository.ParseMysqlError("user",
-		m.db.Delete(&User{}, id).Error,
+		m.db.Select("Roles").Unscoped().Delete(&User{}, id).Error,
 	)
 }
 
