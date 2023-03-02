@@ -13,7 +13,7 @@ type User struct {
 	Phone      string       `gorm:"type:varchar(255);not null;"`
 	Password   string       `gorm:"type:varchar(255);not null;"`
 	FirstLogin sql.NullBool `gorm:"default:true"`
-	Roles      []*Role
+	Roles      []*Role      `gorm:"many2many:user_roles;"`
 }
 
 func (u *User) ToDto() *user.User {
@@ -37,9 +37,7 @@ func (u *User) ToDto() *user.User {
 }
 
 type Role struct {
-	gorm.Model
-	UserID uint
-	Name   string `gorm:"type:varchar(255);not null"`
+	Name string `gorm:"type:varchar(255);primary_key;"`
 }
 
 func NewModel(user *user.User) *User {

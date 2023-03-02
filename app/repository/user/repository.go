@@ -50,10 +50,9 @@ func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 	model := NewModel(user)
 	return repository.ParseMysqlError("user",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Delete(&Role{}, "user_id = ?", user.ID).Error; err != nil {
-				return err
-			}
-			if err := tx.Updates(model).Error; err != nil {
+			tx.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&model)
+			err := tx.Model(&model).Association("Roles").Replace(&model.Roles)
+			if err != nil {
 				return err
 			}
 			return nil
