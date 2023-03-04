@@ -19,10 +19,25 @@ type Repository interface {
 	GetByID(ctx context.Context, id uint) (*user.User, error)
 	// GetByEmail returns a user by email
 	GetByEmail(ctx context.Context, email string) (*user.User, error)
+	// GetMultipleByIds returns multiple users by ids
+	GetMultipleByIds(ctx context.Context, ids []uint) ([]*User, error)
 }
 
 type MySqlRepository struct {
 	db *gorm.DB
+}
+
+func (m *MySqlRepository) GetMultipleByIds(ctx context.Context, ids []uint) ([]*User, error) {
+
+	var models []*User
+
+	err := m.db.Where("id IN ?", ids).Find(&models).Error // not preloading rules
+
+	if err != nil {
+		return nil, repository.ParseMysqlError("user", err)
+	}
+
+	return models, nil
 }
 
 func NewMySqlRepository(db *gorm.DB) *MySqlRepository {

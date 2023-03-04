@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"gorm.io/gorm"
 	"hades_backend/app/model/store"
 	"hades_backend/app/repository"
@@ -8,17 +9,37 @@ import (
 
 type Repository interface {
 	// Create creates a new store
-	Create(store *store.Store) (uint, error)
+	Create(ctx context.Context, store *store.Store) (uint, error)
 	// Update updates an existing store
-	Update(store *store.Store) error
+	Update(ctx context.Context, store *store.Store) error
 	// Delete deletes an existing store
-	Delete(id uint) error
+	Delete(ctx context.Context, id uint) error
 	// GetByID returns a store by id
-	GetByID(id uint) (*store.Store, error)
+	GetByID(ctx context.Context, id uint) (*store.Store, error)
+	// GetAll returns all stores
+	GetAll(ctx context.Context) ([]*store.Store, error)
 }
 
 type MySqlRepository struct {
 	db *gorm.DB
+}
+
+func (m *MySqlRepository) GetAll(ctx context.Context) ([]*store.Store, error) {
+	var models []*Store
+
+	err := m.db.Find(&models).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var stores []*store.Store
+
+	for _, model := range models {
+		stores = append(stores, model.ToDTO())
+	}
+
+	return stores, nil
 }
 
 func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
@@ -32,7 +53,7 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	return &MySqlRepository{db: db}
 }
 
-func (m *MySqlRepository) Create(store *store.Store) (uint, error) {
+func (m *MySqlRepository) Create(ctx context.Context, store *store.Store) (uint, error) {
 
 	model := NewModel(store)
 
@@ -64,8 +85,30 @@ func (m *MySqlRepository) Create(store *store.Store) (uint, error) {
 	return model.ID, nil
 }
 
-func (m *MySqlRepository) Update(store *store.Store) error {
-	_, err := m.Create(store)
+func (m *MySqlRepository) Update(ctx context.Context, store *store.Store) error {
+
+	model := NewModel(store)
+
+	err := repository.ParseMysqlError("store",
+		m.db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Omit("User", "Couriers").Updates(model).Error; err != nil {
+				return err
+			}
+
+			err := tx.Model(model).Association("User").Replace(model.User)
+
+			if err != nil {
+				return err
+			}
+
+			err = tx.Model(model).Association("Couriers").Replace(model.Couriers)
+
+			if err != nil {
+				return err
+			}
+			return nil
+		}),
+	)
 
 	if err != nil {
 		return err
@@ -74,14 +117,13 @@ func (m *MySqlRepository) Update(store *store.Store) error {
 	return nil
 }
 
-func (m *MySqlRepository) Delete(id uint) error {
+func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 
 	s := &Store{}
 	s.ID = id
 
 	err := repository.ParseMysqlError("store",
 		m.db.Transaction(func(tx *gorm.DB) error {
-
 			err := tx.Model(&s).Association("User").Clear()
 			if err != nil {
 				return err
@@ -91,17 +133,14 @@ func (m *MySqlRepository) Delete(id uint) error {
 			if err != nil {
 				return err
 			}
-
 			tx.Delete(&s)
-
 			return nil
 		}),
 	)
-
 	return err
 }
 
-func (m *MySqlRepository) GetByID(id uint) (*store.Store, error) {
+func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*store.Store, error) {
 	var s Store
 	err := m.db.First(&s, id).Error
 	if err != nil {
