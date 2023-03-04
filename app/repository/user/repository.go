@@ -74,7 +74,6 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*user.User, err
 		}
 		return nil, err
 	}
-
 	return u.ToDto(), nil
 }
 
