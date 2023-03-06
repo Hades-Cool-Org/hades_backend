@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"fmt"
+	"hades_backend/app/logging"
 	"hades_backend/app/model/store"
 	"hades_backend/app/model/user"
 	storeRepository "hades_backend/app/repository/store"
@@ -52,29 +54,43 @@ func (s *Service) AddCouriers(ctx context.Context, storeId uint, users []user.Us
 }
 
 func (s *Service) CreateStore(ctx context.Context, store *store.Store) (uint, error) {
+	l := logging.FromContext(ctx)
+	l.Info(fmt.Sprintf("CreatingStore -> [ %s ]", store.ToLoggableString()))
+
 	return s.repository.Create(ctx, store)
 }
 
 func (s *Service) UpdateStore(ctx context.Context, store *store.Store) error {
+	l := logging.FromContext(ctx)
+	l.Info(fmt.Sprintf("UpdatingStore -> [ %s ]", store.ToLoggableString()))
 	return s.repository.Update(ctx, store)
 }
 
 func (s *Service) GetStore(ctx context.Context, id uint) (*store.Store, error) {
+	l := logging.FromContext(ctx)
+	l.Info("GettingStore")
 	return s.repository.GetByID(ctx, id)
 }
 
 func (s *Service) GetAllStores(ctx context.Context) ([]*store.Store, error) {
+	l := logging.FromContext(ctx)
+	l.Info("GettingAllStores")
 	return s.repository.GetAll(ctx)
 }
 
 func (s *Service) DeleteStore(ctx context.Context, id uint) error {
+	l := logging.FromContext(ctx)
+	l.Info(fmt.Sprintf("DeletingStore -> [ id: %v ]", id))
 	return s.repository.Delete(ctx, id)
 }
 
-func (s *Service) GetStoreByUser(ctx context.Context, userId uint) (*store.Store, error) {
-	user, err := s.userRepository.GetByID(ctx, userId)
+func (s *Service) GetStoreByUser(ctx context.Context, userId uint) ([]*store.Store, error) {
+	l := logging.FromContext(ctx)
+	l.Info(fmt.Sprintf("GettingAllStores -> [ userId: %v ]", userId))
+
+	u, err := s.userRepository.GetByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
-	return s.repository.GetByID(ctx, user.StoreID)
+	return s.repository.GetByUserID(ctx, u.ID)
 }

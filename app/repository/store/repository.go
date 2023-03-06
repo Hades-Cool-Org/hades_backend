@@ -18,10 +18,32 @@ type Repository interface {
 	GetByID(ctx context.Context, id uint) (*store.Store, error)
 	// GetAll returns all stores
 	GetAll(ctx context.Context) ([]*store.Store, error)
+	// GetByUserID returns all stores by user id
+	GetByUserID(ctx context.Context, userId uint) ([]*store.Store, error)
 }
 
 type MySqlRepository struct {
 	db *gorm.DB
+}
+
+func (m *MySqlRepository) GetByUserID(ctx context.Context, userId uint) ([]*store.Store, error) {
+
+	var models []*Store
+
+	//TODO: not sure if we should keep it as raw query or use gorm
+	err := m.db.Raw("SELECT * FROM stores where id in (SELECT store_id FROM hades_db.store_owner where user_id = ?)", userId).Scan(&models).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	var stores []*store.Store
+
+	for _, model := range models {
+		stores = append(stores, model.ToDTO())
+	}
+
+	return stores, nil
 }
 
 func (m *MySqlRepository) GetAll(ctx context.Context) ([]*store.Store, error) {

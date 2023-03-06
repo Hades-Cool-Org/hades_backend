@@ -5,14 +5,23 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
+	storeService "hades_backend/app/cmd/store"
+	"hades_backend/app/hades_errors"
+	store2 "hades_backend/app/model/store"
 	"net/http"
+	"strconv"
 )
 
 type Router struct {
+	service *storeService.Service
+}
+
+func NewRouter(service *storeService.Service) *Router {
+	return &Router{service: service}
 }
 
 func (u *Router) URL() string {
-	return "/stores"
+	return "/store"
 }
 
 const storeIdParam = "store_id"
@@ -31,18 +40,13 @@ func (u *Router) Router() func(r chi.Router) {
 }
 
 func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
-	//db search
-	stores := []*Store{
-		{
-			ID:      "ID_RETORNADO_DO_BANCO",
-			Name:    "store1",
-			Address: "Rua 30 de julho, 545",
-		},
-		{
-			ID:      "ID_RETORNADO_DO_BANCO",
-			Name:    "store2",
-			Address: "Rua 30 de julho, 545",
-		},
+	stores, err := u.service.GetAllStores(r.Context())
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -57,15 +61,24 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db search 404 when empty
-	store := &Store{
-		ID:      storeId,
-		Name:    "store2",
-		Address: "Address",
+	storeIdInt, err := strconv.Atoi(storeId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
+		return
+	}
+
+	s, err := u.service.GetStore(r.Context(), uint(storeIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{store})
+	render.Render(w, r, &Response{s})
 }
 
 func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
@@ -77,15 +90,26 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db save
-	store := &Store{
-		ID:      "ID_RETORNADO_DO_BANCO",
-		Name:    data.Name,
-		Address: data.Address,
+	//db insert
+	storeId, err := u.service.CreateStore(r.Context(), data.Store)
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
+	s := &store2.Store{
+		ID:       storeId,
+		Name:     data.Name,
+		Address:  data.Address,
+		User:     data.User,
+		Couriers: data.Couriers,
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &Response{store})
+	render.Render(w, r, &Response{s})
 }
 
 func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
@@ -104,15 +128,35 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	storeIdInt, err := strconv.Atoi(storeId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
+		return
+	}
+
+	data.Store.ID = uint(storeIdInt)
+
+	err = u.service.UpdateStore(r.Context(), data.Store)
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
+
 	//db update
-	store := &Store{
-		ID:      storeId,
-		Name:    data.Name,
-		Address: data.Address,
+	s := &store2.Store{
+		ID:       uint(storeIdInt),
+		Name:     data.Name,
+		Address:  data.Address,
+		User:     data.User,
+		Couriers: data.Couriers,
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{store})
+	render.Render(w, r, &Response{s})
 }
 
 func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +167,21 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
 		return
 	}
-	//db delete
+	storeIdInt, err := strconv.Atoi(storeId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
+		return
+	}
+
+	err = u.service.DeleteStore(r.Context(), uint(storeIdInt))
+
+	if err != nil {
+		errResponse := hades_errors.ParseErrResponse(err)
+		render.Status(r, errResponse.HTTPStatusCode)
+		render.Render(w, r, errResponse)
+		return
+	}
 
 	render.Status(r, http.StatusNoContent)
 }
