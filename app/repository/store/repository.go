@@ -3,8 +3,10 @@ package store
 import (
 	"context"
 	"gorm.io/gorm"
+	"hades_backend/app/logging"
 	"hades_backend/app/model/store"
 	"hades_backend/app/repository"
+	users "hades_backend/app/repository/user"
 )
 
 type Repository interface {
@@ -20,10 +22,31 @@ type Repository interface {
 	GetAll(ctx context.Context) ([]*store.Store, error)
 	// GetByUserID returns all stores by user id
 	GetByUserID(ctx context.Context, userId uint) ([]*store.Store, error)
+	// RemoveCourierFromStore removes a courier from a store
+	RemoveCourierFromStore(ctx context.Context, storeId uint, couriers []*users.User) error
 }
 
 type MySqlRepository struct {
 	db *gorm.DB
+}
+
+func (m *MySqlRepository) RemoveCourierFromStore(ctx context.Context, storeId uint, couriers []*users.User) error {
+	return repository.ParseMysqlError("store",
+		func() error {
+			storeResult, err := m.GetByID(ctx, storeId)
+
+			if err != nil {
+				return err
+			}
+
+			err = m.db.Model(&storeResult).Association("Couriers").Delete(couriers)
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}())
 }
 
 func (m *MySqlRepository) GetByUserID(ctx context.Context, userId uint) ([]*store.Store, error) {
@@ -76,6 +99,7 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 }
 
 func (m *MySqlRepository) Create(ctx context.Context, store *store.Store) (uint, error) {
+	l := logging.FromContext(ctx)
 
 	model := NewModel(store)
 
@@ -85,14 +109,12 @@ func (m *MySqlRepository) Create(ctx context.Context, store *store.Store) (uint,
 				return err
 			}
 
-			err := tx.Model(model).Association("User").Replace(model.User)
-
-			if err != nil {
+			//TODO: FUCKING HATE GORM
+			if err := tx.Exec("INSERT INTO store_owner (store_id, user_id) VALUES (?, ?)", model.ID, model.User.ID).Error; err != nil {
 				return err
 			}
 
-			err = tx.Model(model).Association("Couriers").Replace(model.Couriers)
-
+			err := tx.Model(model).Association("Couriers").Replace(model.Couriers)
 			if err != nil {
 				return err
 			}
@@ -117,13 +139,11 @@ func (m *MySqlRepository) Update(ctx context.Context, store *store.Store) error 
 				return err
 			}
 
-			err := tx.Model(model).Association("User").Replace(model.User)
-
-			if err != nil {
+			if err := tx.Exec("UPDATE store_owner SET user_id = ? where store_id = ?", model.User.ID, model.ID).Error; err != nil {
 				return err
 			}
 
-			err = tx.Model(model).Association("Couriers").Replace(model.Couriers)
+			err := tx.Model(model).Association("Couriers").Replace(model.Couriers)
 
 			if err != nil {
 				return err

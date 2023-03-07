@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"hades_backend/app/model/store"
@@ -11,11 +12,11 @@ type Request struct {
 	*store.Store
 }
 
-type AddCourierRequest struct {
+type UpdateCouriersRequest struct {
 	Couriers []*store.User `json:"couriers"`
 }
 
-func (a *AddCourierRequest) Bind(r *http.Request) error {
+func (a *UpdateCouriersRequest) Bind(r *http.Request) error {
 
 	if len(a.Couriers) == 0 {
 		return errors.New("couriers cannot be empty")
@@ -43,6 +44,13 @@ func (r2 *Request) Bind(r *http.Request) error {
 	if r2.User.ID == 0 {
 		return errors.New("user cannot be empty")
 	}
+
+	for i, v := range r2.Couriers {
+		if v.ID == 0 {
+			return errors.New(fmt.Sprintf("courier at index [ %v ] cannot be empty", i))
+		}
+	}
+
 	return nil
 }
 

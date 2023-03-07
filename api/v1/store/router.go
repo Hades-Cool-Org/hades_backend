@@ -7,7 +7,7 @@ import (
 	"hades_backend/api/utils/net"
 	storeService "hades_backend/app/cmd/store"
 	"hades_backend/app/hades_errors"
-	store2 "hades_backend/app/model/store"
+	storeModel "hades_backend/app/model/store"
 	"net/http"
 	"strconv"
 )
@@ -25,7 +25,6 @@ func (u *Router) URL() string {
 }
 
 const storeIdParam = "store_id"
-const courierIdParam = "courier_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
@@ -34,8 +33,8 @@ func (u *Router) Router() func(r chi.Router) {
 		r.Get("/{store_id}", u.Get)
 		r.Put("/{store_id}", u.Update)
 		r.Delete("/{store_id}", u.Delete)
-		r.Delete("/{store_id}/couriers/{courier_id}", u.DeleteCourier)
-		r.Post("/{store_id}/couriers/{courier_id}", u.AddCourier)
+		r.Delete("/{store_id}/couriers", u.RemoveCourier)
+		r.Post("/{store_id}/couriers", u.AddCourier)
 	}
 }
 
@@ -43,9 +42,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	stores, err := u.service.GetAllStores(r.Context())
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		renderError(w, r, err)
 		return
 	}
 
@@ -71,9 +68,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	s, err := u.service.GetStore(r.Context(), uint(storeIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		renderError(w, r, err)
 		return
 	}
 
@@ -94,13 +89,11 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	storeId, err := u.service.CreateStore(r.Context(), data.Store)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		renderError(w, r, err)
 		return
 	}
 
-	s := &store2.Store{
+	s := &storeModel.Store{
 		ID:       storeId,
 		Name:     data.Name,
 		Address:  data.Address,
@@ -140,14 +133,12 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 	err = u.service.UpdateStore(r.Context(), data.Store)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		renderError(w, r, err)
 		return
 	}
 
 	//db update
-	s := &store2.Store{
+	s := &storeModel.Store{
 		ID:       uint(storeIdInt),
 		Name:     data.Name,
 		Address:  data.Address,
@@ -177,16 +168,21 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	err = u.service.DeleteStore(r.Context(), uint(storeIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		renderError(w, r, err)
 		return
 	}
 
 	render.Status(r, http.StatusNoContent)
 }
 
-func (u *Router) DeleteCourier(w http.ResponseWriter, r *http.Request) {
+func (u *Router) RemoveCourier(w http.ResponseWriter, r *http.Request) {
+
+	data := &UpdateCouriersRequest{}
+
+	if err := render.Bind(r, data); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
 
 	storeId := chi.URLParam(r, storeIdParam)
 
@@ -195,23 +191,56 @@ func (u *Router) DeleteCourier(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	courierId := chi.URLParam(r, courierIdParam)
+	storeIdInt, err := strconv.Atoi(storeId)
 
-	if courierId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("courierId is empty")))
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
 		return
 	}
-	//db delete
+
+	err = u.service.RemoveCouriers(r.Context(), uint(storeIdInt), data.Couriers)
+
+	if err != nil {
+		renderError(w, r, err)
+		return
+	}
 
 	render.Status(r, http.StatusNoContent)
 }
 
+func renderError(w http.ResponseWriter, r *http.Request, err error) {
+	errResponse := hades_errors.ParseErrResponse(err)
+	render.Status(r, errResponse.HTTPStatusCode)
+	render.Render(w, r, errResponse)
+}
+
 func (u *Router) AddCourier(w http.ResponseWriter, r *http.Request) {
 
-	data := &AddCourierRequest{}
+	data := &UpdateCouriersRequest{}
 
 	if err := render.Bind(r, data); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	//TODO: we should definitively avoid duplicating this code. Abstraction with render doesnt work well in go
+	storeId := chi.URLParam(r, storeIdParam)
+
+	if storeId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
+		return
+	}
+
+	storeIdInt, err := strconv.Atoi(storeId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
+		return
+	}
+
+	err = u.service.AddCouriers(r.Context(), uint(storeIdInt), data.Couriers)
+	if err != nil {
+		renderError(w, r, err)
 		return
 	}
 

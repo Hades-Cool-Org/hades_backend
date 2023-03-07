@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hades_backend/app/logging"
 	"hades_backend/app/model/store"
-	"hades_backend/app/model/user"
 	storeRepository "hades_backend/app/repository/store"
 	userRepository "hades_backend/app/repository/user"
 )
@@ -22,7 +21,9 @@ func NewService(repository storeRepository.Repository, userRepository userReposi
 	}
 }
 
-func (s *Service) AddCouriers(ctx context.Context, storeId uint, users []user.User) error {
+func (s *Service) AddCouriers(ctx context.Context, storeId uint, users []*store.User) error {
+	l := logging.FromContext(ctx)
+	l.Info(fmt.Sprintf("AddingCouriers -> [ storeId: %v, %v ]", storeId, len(users)))
 
 	if len(users) == 0 {
 		return nil
@@ -45,12 +46,43 @@ func (s *Service) AddCouriers(ctx context.Context, storeId uint, users []user.Us
 	if err != nil {
 		return err
 	}
-
+	//TODO: I think we could improve that by just using Associations.append
 	for _, u := range usersResult {
 		storeResult.Couriers = append(storeResult.Couriers, &store.User{ID: u.ID})
 	}
 
 	return s.repository.Update(ctx, storeResult)
+}
+
+// RemoveCouriers dumb way, just get all couriers and remove the ones that are in the list TODO improve
+func (s *Service) RemoveCouriers(ctx context.Context, storeId uint, users []*store.User) error {
+	l := logging.FromContext(ctx)
+	l.Info(fmt.Sprintf("RemovingCouriers -> [ storeId: %v, %v ]", storeId, len(users)))
+
+	if len(users) == 0 {
+		return nil
+	}
+
+	var ids []uint
+
+	for _, u := range users {
+		ids = append(ids, u.ID)
+	}
+
+	usersResult, err := s.userRepository.GetMultipleByIds(ctx, ids)
+
+	if err != nil {
+		return err
+	}
+
+	err = s.repository.RemoveCourierFromStore(ctx, storeId, usersResult)
+	if err != nil {
+		return err
+	}
+
+	l.Info(fmt.Sprintf("Succesfully removed couriers -> [ storeId: %v ]", storeId))
+
+	return nil
 }
 
 func (s *Service) CreateStore(ctx context.Context, store *store.Store) (uint, error) {

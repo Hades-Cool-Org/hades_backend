@@ -27,19 +27,6 @@ type MySqlRepository struct {
 	db *gorm.DB
 }
 
-func (m *MySqlRepository) GetMultipleByIds(ctx context.Context, ids []uint) ([]*User, error) {
-
-	var models []*User
-
-	err := m.db.Where("id IN ?", ids).Find(&models).Error // not preloading rules
-
-	if err != nil {
-		return nil, repository.ParseMysqlError("user", err)
-	}
-
-	return models, nil
-}
-
 func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	// Migrate the schema
 	err := db.AutoMigrate(&User{}, &Role{})
@@ -49,6 +36,19 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	}
 
 	return &MySqlRepository{db: db}
+}
+
+func (m *MySqlRepository) GetMultipleByIds(ctx context.Context, ids []uint) ([]*User, error) {
+
+	var models []*User
+
+	err := m.db.Model(&User{}).Where("id IN ?", ids).Find(&models).Error // not preloading rules, should we?
+
+	if err != nil {
+		return nil, repository.ParseMysqlError("user", err)
+	}
+
+	return models, nil
 }
 
 func (m *MySqlRepository) Create(ctx context.Context, user *user.User) (uint, error) {
