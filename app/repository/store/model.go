@@ -10,8 +10,9 @@ type Store struct {
 	gorm.Model
 	Name     string       `gorm:"type:varchar(255);not null;"`
 	Address  string       `gorm:"type:varchar(255);not null;"`
-	User     *user.User   `gorm:"many2many:store_owner;"`
 	Couriers []*user.User `gorm:"many2many:store_couriers;"`
+	UserID   uint
+	User     *user.User
 }
 
 func NewModel(s *store.Store) *Store {
@@ -40,6 +41,7 @@ func NewModel(s *store.Store) *Store {
 		Name:     s.Name,
 		Address:  s.Address,
 		User:     u,
+		UserID:   u.ID,
 		Couriers: couriers,
 	}
 

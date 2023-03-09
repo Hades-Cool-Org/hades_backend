@@ -104,16 +104,11 @@ func (m *MySqlRepository) Create(ctx context.Context, store *store.Store) (uint,
 
 	err := repository.ParseMysqlError(ctx, "store",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Omit("User", "Couriers").Create(model).Error; err != nil {
+			if err := tx.Omit("Couriers").Create(model).Error; err != nil {
 				return err
 			}
 
-			//TODO: FUCKING HATE GORM
-			if err := tx.Exec("INSERT INTO store_owner (store_id, user_id) VALUES (?, ?)", model.ID, model.User.ID).Error; err != nil {
-				return err
-			}
-
-			err := tx.Model(model).Association("Couriers").Replace(model.Couriers)
+			err := tx.Model(model).Association("Couriers").Append(model.Couriers)
 			if err != nil {
 				return err
 			}
@@ -134,11 +129,7 @@ func (m *MySqlRepository) Update(ctx context.Context, store *store.Store) error 
 
 	err := repository.ParseMysqlError(ctx, "store",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Where("id = ?", model.ID).Omit("User", "Couriers").Updates(model).Error; err != nil {
-				return err
-			}
-
-			if err := tx.Exec("UPDATE store_owner SET user_id = ? where store_id = ?", model.User.ID, model.ID).Error; err != nil {
+			if err := tx.Where("id = ?", model.ID).Omit("Couriers").Updates(model).Error; err != nil {
 				return err
 			}
 
@@ -183,21 +174,7 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 
 func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*store.Store, error) {
 	var s Store
-	err := repository.ParseMysqlError(ctx, "store", m.db.Preload("Couriers").First(&s, id).Error)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var ls []*users.User
-
-	err = m.db.Model(&s).Association("User").Find(&ls)
-
-	if err != nil {
-		return nil, repository.ParseMysqlError(ctx, "store", err)
-	}
-
-	s.User = ls[0]
+	err := repository.ParseMysqlError(ctx, "store", m.db.Preload("Couriers").Preload("User").First(&s, id).Error)
 
 	if err != nil {
 		return nil, err

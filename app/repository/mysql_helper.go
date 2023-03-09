@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
+	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"net/http"
 )
@@ -13,6 +14,10 @@ func ParseMysqlError(ctx context.Context, entity string, err error) error {
 
 	if err == nil {
 		return nil
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return net.NewHadesError(ctx, errors.New(fmt.Sprintf("%s not found", entity)), http.StatusNotFound)
 	}
 
 	var mysqlErr *mysql.MySQLError
