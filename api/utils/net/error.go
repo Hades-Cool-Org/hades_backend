@@ -1,20 +1,18 @@
-package hades_errors
+package net
 
 import (
+	"context"
 	"errors"
 	"go.uber.org/zap"
-	"hades_backend/api/utils/net"
 	"hades_backend/app/logging"
 	"net/http"
 )
 
 var (
 	defaultErrorCode = 500
-
-	l = logging.Initialize()
 )
 
-func ParseErrResponse(err error) *net.ErrResponse {
+func ParseErrResponse(err error) *ErrResponse {
 
 	var hadesErr *HadesError
 
@@ -28,7 +26,7 @@ func ParseErrResponse(err error) *net.ErrResponse {
 		return defaultErrorCode
 	}()
 
-	return &net.ErrResponse{
+	return &ErrResponse{
 		Err:            err,
 		HTTPStatusCode: status,
 		StatusText:     err.Error(),
@@ -43,7 +41,8 @@ type HadesError struct {
 	Status int
 }
 
-func NewHadesError(err error, status int) *HadesError {
+func NewHadesError(ctx context.Context, err error, status int) *HadesError {
+	l := logging.FromContext(ctx)
 	l.Error("got an error -> "+err.Error(), zap.Int("status", status))
 	if err == nil {
 		err = errors.New("unknown error")
@@ -51,10 +50,6 @@ func NewHadesError(err error, status int) *HadesError {
 	return &HadesError{err, status}
 }
 
-func NewNotFoundError(err error) *HadesError {
-	return NewHadesError(err, http.StatusNotFound)
-}
-
-func NewForbiddenError(err error) *HadesError {
-	return NewHadesError(err, http.StatusForbidden)
+func NewForbiddenError(ctx context.Context, err error) *HadesError {
+	return NewHadesError(ctx, err, http.StatusForbidden)
 }

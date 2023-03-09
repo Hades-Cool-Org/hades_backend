@@ -6,7 +6,6 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	storeService "hades_backend/app/cmd/store"
-	"hades_backend/app/hades_errors"
 	storeModel "hades_backend/app/model/store"
 	"net/http"
 	"strconv"
@@ -42,7 +41,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	stores, err := u.service.GetAllStores(r.Context())
 
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -68,7 +67,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	s, err := u.service.GetStore(r.Context(), uint(storeIdInt))
 
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -89,7 +88,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	storeId, err := u.service.CreateStore(r.Context(), data.Store)
 
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -133,7 +132,7 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 	err = u.service.UpdateStore(r.Context(), data.Store)
 
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -168,7 +167,7 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	err = u.service.DeleteStore(r.Context(), uint(storeIdInt))
 
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -201,17 +200,11 @@ func (u *Router) RemoveCourier(w http.ResponseWriter, r *http.Request) {
 	err = u.service.RemoveCouriers(r.Context(), uint(storeIdInt), data.Couriers)
 
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
 	render.Status(r, http.StatusNoContent)
-}
-
-func renderError(w http.ResponseWriter, r *http.Request, err error) {
-	errResponse := hades_errors.ParseErrResponse(err)
-	render.Status(r, errResponse.HTTPStatusCode)
-	render.Render(w, r, errResponse)
 }
 
 func (u *Router) AddCourier(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +233,7 @@ func (u *Router) AddCourier(w http.ResponseWriter, r *http.Request) {
 
 	err = u.service.AddCouriers(r.Context(), uint(storeIdInt), data.Couriers)
 	if err != nil {
-		renderError(w, r, err)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 

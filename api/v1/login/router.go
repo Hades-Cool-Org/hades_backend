@@ -5,7 +5,6 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/user"
-	"hades_backend/app/hades_errors"
 	"net/http"
 )
 
@@ -36,11 +35,10 @@ func (u *Router) Login(w http.ResponseWriter, r *http.Request) {
 	login, err := u.userService.Login(r.Context(), data.Email, data.Password)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
+
 	render.Status(r, http.StatusOK)
 	render.Render(w, r, &Response{Token: login.Token})
 }

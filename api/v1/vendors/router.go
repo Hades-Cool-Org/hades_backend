@@ -6,7 +6,6 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/vendors"
-	"hades_backend/app/hades_errors"
 	vendors2 "hades_backend/app/model/vendors"
 	"net/http"
 	"strconv"
@@ -41,9 +40,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	vs, err := u.service.GetVendors(r.Context())
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -69,9 +66,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	vendor, err := u.service.GetVendor(r.Context(), uint(vendorIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -89,10 +84,9 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vendorId, err := u.service.CreateVendor(r.Context(), data.Vendor)
+
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -137,9 +131,7 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 	err = u.service.UpdateVendor(r.Context(), uint(vendorIdInt), data.Vendor)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -177,9 +169,7 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	err = u.service.DeleteVendor(r.Context(), uint(vendorIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 

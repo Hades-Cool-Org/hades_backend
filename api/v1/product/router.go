@@ -6,8 +6,6 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/product"
-	"hades_backend/app/hades_errors"
-
 	productModel "hades_backend/app/model/product"
 	"net/http"
 	"strconv"
@@ -42,9 +40,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	products, err := u.service.GetProducts(r.Context())
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -70,9 +66,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	p, err := u.service.GetProduct(r.Context(), uint(productIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -91,10 +85,9 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 
 	//db save
 	p, err := u.service.CreateProduct(r.Context(), data.Product)
+
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -137,9 +130,7 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 	err = u.service.UpdateProduct(r.Context(), id, data.Product)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -174,9 +165,7 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	err = u.service.DeleteProduct(r.Context(), uint(productIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 

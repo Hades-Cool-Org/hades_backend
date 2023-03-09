@@ -7,7 +7,6 @@ import (
 	"hades_backend/api/middleware"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/user"
-	"hades_backend/app/hades_errors"
 	userModel "hades_backend/app/model/user"
 	"net/http"
 	"strconv"
@@ -58,9 +57,7 @@ func (r2 *Router) Create(w http.ResponseWriter, r *http.Request) {
 	id, err := r2.UserService.CreateUser(r.Context(), data.User)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -112,9 +109,7 @@ func (r2 *Router) Update(w http.ResponseWriter, r *http.Request) {
 	err = r2.UserService.UpdateUser(r.Context(), uint(userIdInt), u)
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -142,9 +137,7 @@ func (r2 *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	err = r2.UserService.DeleteUser(r.Context(), uint(userIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
@@ -171,9 +164,7 @@ func (r2 *Router) Get(w http.ResponseWriter, r *http.Request) {
 	u, err := r2.UserService.GetUser(r.Context(), uint(userIdInt))
 
 	if err != nil {
-		errResponse := hades_errors.ParseErrResponse(err)
-		render.Status(r, errResponse.HTTPStatusCode)
-		render.Render(w, r, errResponse)
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/go-chi/jwtauth/v5"
 	"go.uber.org/zap"
-	"hades_backend/app/hades_errors"
+	"hades_backend/api/utils/net"
 	"hades_backend/app/logging"
 	user2 "hades_backend/app/model/user"
 	"hades_backend/app/repository/user"
@@ -42,7 +42,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*user2
 	}
 
 	if u == nil {
-		return nil, hades_errors.NewForbiddenError(errors.New("invalid user or password"))
+		return nil, net.NewForbiddenError(ctx, errors.New("invalid user or password"))
 	}
 
 	encodedPass := s.EncodePassword(password)
@@ -53,7 +53,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*user2
 		return &user2.Login{Token: s.encodeUserToken(u)}, nil
 	}
 
-	return nil, hades_errors.NewForbiddenError(errors.New("invalid user or password"))
+	return nil, net.NewForbiddenError(ctx, errors.New("invalid user or password"))
 }
 
 func (s *AuthService) EncodePassword(password string) string {

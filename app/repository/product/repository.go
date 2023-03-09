@@ -39,7 +39,7 @@ func (m *MySqlRepository) Create(ctx context.Context, product *product.Product) 
 	model := NewModel(product)
 
 	if err := m.db.Create(model).Error; err != nil {
-		return 0, repository.ParseMysqlError("product", err)
+		return 0, repository.ParseMysqlError(ctx, "product", err)
 	}
 	return model.ID, nil
 }
@@ -47,14 +47,14 @@ func (m *MySqlRepository) Create(ctx context.Context, product *product.Product) 
 func (m *MySqlRepository) Update(ctx context.Context, product *product.Product) error {
 	model := NewModel(product)
 	if err := m.db.Updates(model).Error; err != nil {
-		return repository.ParseMysqlError("product", err)
+		return repository.ParseMysqlError(ctx, "product", err)
 	}
 	return nil
 }
 
 func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 	if err := m.db.Delete(&Product{}, "id = ?", id).Error; err != nil {
-		return repository.ParseMysqlError("product", err)
+		return repository.ParseMysqlError(ctx, "product", err)
 	}
 	return nil
 }
@@ -62,7 +62,7 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*product.Product, error) {
 	var model Product
 	if err := m.db.First(&model, "id = ?", id).Error; err != nil {
-		return nil, repository.ParseMysqlError("product", err)
+		return nil, repository.ParseMysqlError(ctx, "product", err)
 	}
 	return model.ToDto(), nil
 }
@@ -70,7 +70,7 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*product.Produc
 func (m *MySqlRepository) GetAll(ctx context.Context) ([]*product.Product, error) {
 	var models []*Product
 	if err := m.db.Find(&models).Error; err != nil {
-		return nil, repository.ParseMysqlError("product", err)
+		return nil, repository.ParseMysqlError(ctx, "product", err)
 	}
 	products := make([]*product.Product, len(models))
 	for i, model := range models {

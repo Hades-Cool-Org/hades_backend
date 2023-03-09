@@ -4,7 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/pkg/errors"
-	"hades_backend/app/hades_errors"
+	"hades_backend/api/utils/net"
 	"hades_backend/app/identity"
 	"net/http"
 	"strconv"
@@ -32,8 +32,8 @@ func PermissionCheck(fn func(r *http.Request) bool) func(next http.Handler) http
 		fn := func(w http.ResponseWriter, r *http.Request) {
 
 			if !fn(r) {
-				e := hades_errors.NewForbiddenError(errors.New("you are not allowed perform this operation"))
-				errResponse := hades_errors.ParseErrResponse(e)
+				e := net.NewForbiddenError(r.Context(), errors.New("you are not allowed perform this operation"))
+				errResponse := net.ParseErrResponse(e)
 				render.Status(r, errResponse.HTTPStatusCode)
 				render.Render(w, r, errResponse)
 				return

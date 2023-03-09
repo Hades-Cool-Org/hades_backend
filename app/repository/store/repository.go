@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"gorm.io/gorm"
-	"hades_backend/app/logging"
 	"hades_backend/app/model/store"
 	"hades_backend/app/repository"
 	users "hades_backend/app/repository/user"
@@ -31,7 +30,7 @@ type MySqlRepository struct {
 }
 
 func (m *MySqlRepository) RemoveCourierFromStore(ctx context.Context, storeId uint, couriers []*users.User) error {
-	return repository.ParseMysqlError("store",
+	return repository.ParseMysqlError(ctx, "store",
 		func() error {
 			storeResult, err := m.GetByID(ctx, storeId)
 
@@ -99,11 +98,11 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 }
 
 func (m *MySqlRepository) Create(ctx context.Context, store *store.Store) (uint, error) {
-	l := logging.FromContext(ctx)
+	//l := logging.FromContext(ctx)
 
 	model := NewModel(store)
 
-	err := repository.ParseMysqlError("store",
+	err := repository.ParseMysqlError(ctx, "store",
 		m.db.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Omit("User", "Couriers").Create(model).Error; err != nil {
 				return err
@@ -133,9 +132,9 @@ func (m *MySqlRepository) Update(ctx context.Context, store *store.Store) error 
 
 	model := NewModel(store)
 
-	err := repository.ParseMysqlError("store",
+	err := repository.ParseMysqlError(ctx, "store",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Omit("User", "Couriers").Updates(model).Error; err != nil {
+			if err := tx.Where("id = ?", model.ID).Omit("User", "Couriers").Updates(model).Error; err != nil {
 				return err
 			}
 
@@ -164,7 +163,7 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 	s := &Store{}
 	s.ID = id
 
-	err := repository.ParseMysqlError("store",
+	err := repository.ParseMysqlError(ctx, "store",
 		m.db.Transaction(func(tx *gorm.DB) error {
 			err := tx.Model(&s).Association("User").Clear()
 			if err != nil {

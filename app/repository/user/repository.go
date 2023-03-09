@@ -45,7 +45,7 @@ func (m *MySqlRepository) GetMultipleByIds(ctx context.Context, ids []uint) ([]*
 	err := m.db.Model(&User{}).Where("id IN ?", ids).Find(&models).Error // not preloading rules, should we?
 
 	if err != nil {
-		return nil, repository.ParseMysqlError("user", err)
+		return nil, repository.ParseMysqlError(ctx, "user", err)
 	}
 
 	return models, nil
@@ -55,7 +55,7 @@ func (m *MySqlRepository) Create(ctx context.Context, user *user.User) (uint, er
 	model := NewModel(user)
 
 	if err := m.db.Create(model).Error; err != nil {
-		return 0, repository.ParseMysqlError("user", err)
+		return 0, repository.ParseMysqlError(ctx, "user", err)
 	}
 
 	return model.ID, nil
@@ -63,7 +63,7 @@ func (m *MySqlRepository) Create(ctx context.Context, user *user.User) (uint, er
 
 func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 	model := NewModel(user)
-	return repository.ParseMysqlError("user",
+	return repository.ParseMysqlError(ctx, "user",
 		m.db.Transaction(func(tx *gorm.DB) error {
 			tx.Session(&gorm.Session{FullSaveAssociations: true}).Updates(&model)
 			err := tx.Model(&model).Association("Roles").Replace(&model.Roles)
@@ -76,7 +76,7 @@ func (m *MySqlRepository) Update(ctx context.Context, user *user.User) error {
 }
 
 func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
-	return repository.ParseMysqlError("user",
+	return repository.ParseMysqlError(ctx, "user",
 		m.db.Select("Roles").Unscoped().Delete(&User{}, id).Error,
 	)
 }

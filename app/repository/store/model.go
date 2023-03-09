@@ -36,12 +36,18 @@ func NewModel(s *store.Store) *Store {
 		u = fnUser(s.User)
 	}
 
-	return &Store{
+	s2 := &Store{
 		Name:     s.Name,
 		Address:  s.Address,
 		User:     u,
 		Couriers: couriers,
 	}
+
+	if s.ID != 0 {
+		s2.ID = s.ID
+	}
+
+	return s2
 }
 
 func (s *Store) ToDTO() *store.Store {
