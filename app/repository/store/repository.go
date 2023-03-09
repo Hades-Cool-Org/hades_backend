@@ -183,9 +183,25 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 
 func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*store.Store, error) {
 	var s Store
-	err := m.db.First(&s, id).Error
+	err := repository.ParseMysqlError(ctx, "store", m.db.Preload("Couriers").First(&s, id).Error)
+
 	if err != nil {
 		return nil, err
 	}
+
+	var ls []*users.User
+
+	err = m.db.Model(&s).Association("User").Find(&ls)
+
+	if err != nil {
+		return nil, repository.ParseMysqlError(ctx, "store", err)
+	}
+
+	s.User = ls[0]
+
+	if err != nil {
+		return nil, err
+	}
+
 	return s.ToDTO(), nil
 }
