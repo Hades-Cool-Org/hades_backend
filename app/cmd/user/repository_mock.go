@@ -10,6 +10,11 @@ type MockRepository struct {
 	Users map[uint]*user.User
 }
 
+func (m *MockRepository) GetMultipleByIds(ctx context.Context, ids []uint) ([]*User, error) {
+
+	return nil, nil
+}
+
 func (m *MockRepository) Create(ctx context.Context, user *user.User) (uint, error) {
 	user.ID = uint(len(m.Users) + 1)
 	m.Users[user.ID] = user

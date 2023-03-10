@@ -22,7 +22,7 @@ type ProductData struct {
 	Product   *product.Product
 }
 
-// TableName overrides the table name used by User to `profiles`
+// TableName overrides the table name used by ProductData to `stock_products`
 func (ProductData) TableName() string {
 	return "stock_products"
 }
