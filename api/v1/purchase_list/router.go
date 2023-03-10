@@ -5,10 +5,18 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
+	purchaseListModel "hades_backend/app/cmd/purchase_list"
+	"hades_backend/app/model/purchase_list"
 	"net/http"
+	"strconv"
 )
 
 type Router struct {
+	service *purchaseListModel.Service
+}
+
+func NewRouter(service *purchaseListModel.Service) *Router {
+	return &Router{service: service}
 }
 
 func (u *Router) URL() string {
@@ -38,61 +46,37 @@ func (u *Router) GetAllForUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db search
-	puchaseList := []*List{
-		{
-			ID:     "from db",
-			UserID: "from db",
-			Products: []*Product{
-				{
-					ID:            "ID_RETORNADO_DO_BANCO",
-					Name:          "product1",
-					Image:         "url",
-					MeasuringUnit: "UN",
-				},
-				{
-					ID:            "ID_RETORNADO_DO_BANCO_2",
-					Name:          "product2",
-					Image:         "url",
-					MeasuringUnit: "UN",
-				},
-			},
-		},
+	userIdInt, err := strconv.Atoi(userId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("userId is not a number: "+err.Error())))
+		return
+	}
+
+	lists, err := u.service.GetPurchaseListsByUserId(r.Context(), uint(userIdInt))
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &GetAllResponse{puchaseList})
+	render.Render(w, r, &GetAllResponse{lists})
 }
 
 func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	//db search
-	puchaseList := []*List{
-		{
-			ID:     "from db",
-			UserID: "from db",
-			Products: []*Product{
-				{
-					ID:            "ID_RETORNADO_DO_BANCO",
-					Name:          "product1",
-					Image:         "url",
-					MeasuringUnit: "UN",
-				},
-				{
-					ID:            "ID_RETORNADO_DO_BANCO_2",
-					Name:          "product2",
-					Image:         "url",
-					MeasuringUnit: "UN",
-				},
-			},
-		},
+	lists, err := u.service.GetPurchaseLists(r.Context())
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &GetAllResponse{puchaseList})
+	render.Render(w, r, &GetAllResponse{lists})
 }
 
 func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
+
 	listId := chi.URLParam(r, listIdParam)
 
 	if listId == "" {
@@ -100,24 +84,17 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db search 404 when empty
-	list := &List{
-		ID:     "from db",
-		UserID: "from db",
-		Products: []*Product{
-			{
-				ID:            "ID_RETORNADO_DO_BANCO",
-				Name:          "product1",
-				Image:         "url",
-				MeasuringUnit: "UN",
-			},
-			{
-				ID:            "ID_RETORNADO_DO_BANCO_2",
-				Name:          "product2",
-				Image:         "url",
-				MeasuringUnit: "UN",
-			},
-		},
+	listIdInt, err := strconv.Atoi(listId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("listId is not a number: "+err.Error())))
+		return
+	}
+
+	list, err := u.service.GetPurchaseList(r.Context(), uint(listIdInt))
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -133,31 +110,33 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//db search 404 when empty
-	list := &List{
-		ID:     "from db",
-		UserID: "from db",
-		Products: []*Product{
-			{
-				ID:            "ID_RETORNADO_DO_BANCO",
-				Name:          "product1",
-				Image:         "url",
-				MeasuringUnit: "UN",
-			},
-			{
-				ID:            "ID_RETORNADO_DO_BANCO_2",
-				Name:          "product2",
-				Image:         "url",
-				MeasuringUnit: "UN",
-			},
-		},
+	id, err := u.service.CreatePurchaseList(r.Context(), data.PurchaseList)
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
+
+	list := &purchase_list.PurchaseList{ID: id}
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, &Response{list})
 }
 
 func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
+
+	listIdInPAram := chi.URLParam(r, listIdParam)
+
+	if listIdInPAram == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("listIdInPAram is empty")))
+		return
+	}
+
+	listId, err := strconv.Atoi(listIdInPAram)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("listIdInPAram is not a number: "+err.Error())))
+		return
+	}
 
 	data := &Request{}
 
@@ -166,44 +145,36 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listId := chi.URLParam(r, listIdParam)
+	data.PurchaseList.ID = uint(listId)
 
-	if listId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("listId is empty")))
+	err = u.service.UpdatePurchaseList(r.Context(), uint(listId), data.PurchaseList)
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
-	//db update
-	//db search 404 when empty
-	list := &List{
-		ID:     "from db",
-		UserID: "from db",
-		Products: []*Product{
-			{
-				ID:            "ID_RETORNADO_DO_BANCO",
-				Name:          "product1",
-				Image:         "url",
-				MeasuringUnit: "UN",
-			},
-			{
-				ID:            "ID_RETORNADO_DO_BANCO_2",
-				Name:          "product2",
-				Image:         "url",
-				MeasuringUnit: "UN",
-			},
-		},
-	}
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{list})
+	render.Status(r, http.StatusNoContent)
 }
 
 func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 
-	listIdParam := chi.URLParam(r, listIdParam)
+	listIdInPAram := chi.URLParam(r, listIdParam)
 
-	if listIdParam == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("listIdParam is empty")))
+	if listIdInPAram == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("listIdInPAram is empty")))
+		return
+	}
+
+	listId, err := strconv.Atoi(listIdInPAram)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("listIdInPAram is not a number: "+err.Error())))
+		return
+	}
+
+	err = u.service.DeletePurchaseList(r.Context(), uint(listId))
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 

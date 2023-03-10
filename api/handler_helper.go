@@ -6,11 +6,13 @@ import (
 	customMiddleware "hades_backend/api/middleware"
 	"hades_backend/api/v1/login"
 	"hades_backend/api/v1/product"
+	"hades_backend/api/v1/purchase_list"
 	"hades_backend/api/v1/stock"
 	"hades_backend/api/v1/store"
 	"hades_backend/api/v1/user"
 	"hades_backend/api/v1/vendors"
 	productService "hades_backend/app/cmd/product"
+	purchaseListService "hades_backend/app/cmd/purchase_list"
 	stockService "hades_backend/app/cmd/stock"
 	storeService "hades_backend/app/cmd/store"
 	userService "hades_backend/app/cmd/user"
@@ -22,13 +24,14 @@ type CustomHandler interface {
 }
 
 type MySQLHandler struct {
-	DB             *gorm.DB
-	userRepository userService.Repository
-	userService    *userService.Service
-	vendorService  *vendorsCmd.Service
-	productService *productService.Service
-	storeService   *storeService.Service
-	stockService   *stockService.Service
+	DB                  *gorm.DB
+	userRepository      userService.Repository
+	userService         *userService.Service
+	vendorService       *vendorsCmd.Service
+	productService      *productService.Service
+	storeService        *storeService.Service
+	stockService        *stockService.Service
+	purchaseListService *purchaseListService.Service
 }
 
 func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
@@ -48,6 +51,9 @@ func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
 
 	stockRepository := stockService.NewMySQLRepository(db)
 	h.stockService = stockService.NewService(stockRepository)
+
+	purchaseListRepository := purchaseListService.NewRepository(db)
+	h.purchaseListService = purchaseListService.NewService(purchaseListRepository)
 
 	return h
 }
@@ -80,6 +86,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 
 		stockRouter := m.initStockRouter()
 		r.Route(stockRouter.URL(), stockRouter.Router())
+
+		purchaseListRouter := m.initPurchaseListRouter()
+		r.Route(purchaseListRouter.URL(), purchaseListRouter.Router())
 	})
 }
 
@@ -105,4 +114,8 @@ func (m *MySQLHandler) initStoreRouter() *store.Router {
 
 func (m *MySQLHandler) initStockRouter() *stock.Router {
 	return stock.NewRouter(m.stockService)
+}
+
+func (m *MySQLHandler) initPurchaseListRouter() *purchase_list.Router {
+	return purchase_list.NewRouter(m.purchaseListService)
 }
