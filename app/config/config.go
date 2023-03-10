@@ -7,11 +7,7 @@ import (
 	"os"
 )
 
-var Cfg *Config
-
-func init() {
-	Cfg = newConfig()
-}
+var Cfg = newConfig()
 
 type Config struct {
 	Server struct {

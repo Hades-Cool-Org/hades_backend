@@ -6,10 +6,12 @@ import (
 	customMiddleware "hades_backend/api/middleware"
 	"hades_backend/api/v1/login"
 	"hades_backend/api/v1/product"
+	"hades_backend/api/v1/stock"
 	"hades_backend/api/v1/store"
 	"hades_backend/api/v1/user"
 	"hades_backend/api/v1/vendors"
 	productService "hades_backend/app/cmd/product"
+	stockService "hades_backend/app/cmd/stock"
 	storeService "hades_backend/app/cmd/store"
 	userService "hades_backend/app/cmd/user"
 	vendorsCmd "hades_backend/app/cmd/vendors"
@@ -26,6 +28,7 @@ type MySQLHandler struct {
 	vendorService  *vendorsCmd.Service
 	productService *productService.Service
 	storeService   *storeService.Service
+	stockService   *stockService.Service
 }
 
 func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
@@ -42,6 +45,9 @@ func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
 
 	sr := storeService.NewMySqlRepository(db)
 	h.storeService = storeService.NewService(sr, h.userRepository)
+
+	stockRepository := stockService.NewMySQLRepository(db)
+	h.stockService = stockService.NewService(stockRepository)
 
 	return h
 }
@@ -71,6 +77,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 
 		storeRouter := m.initStoreRouter()
 		r.Route(storeRouter.URL(), storeRouter.Router())
+
+		stockRouter := m.initStockRouter()
+		r.Route(stockRouter.URL(), stockRouter.Router())
 	})
 }
 
@@ -92,4 +101,8 @@ func (m *MySQLHandler) initProductRouter() *product.Router {
 
 func (m *MySQLHandler) initStoreRouter() *store.Router {
 	return store.NewRouter(m.storeService)
+}
+
+func (m *MySQLHandler) initStockRouter() *stock.Router {
+	return stock.NewRouter(m.stockService)
 }

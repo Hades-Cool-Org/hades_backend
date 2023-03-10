@@ -1,13 +1,11 @@
 package config
 
-var cfg = Cfg
-
 const (
 	EnvProd = "prod"
 )
 
 func IsProd() bool {
-	return cfg.Env == EnvProd
+	return Cfg.Env == EnvProd
 }
 
 func ExecIfProd(fn func()) {

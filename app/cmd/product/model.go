@@ -9,7 +9,7 @@ type Product struct {
 	gorm.Model
 	Name          string `gorm:"type:varchar(255);not null;"`
 	Details       string `gorm:"type:varchar(255)"`
-	Image         string `gorm:"type:varchar(255)"`
+	ImageUrl      string `gorm:"type:varchar(255)"`
 	MeasuringUnit string `gorm:"type:varchar(55)"`
 }
 
@@ -18,7 +18,7 @@ func (p *Product) ToDto() *product.Product {
 		ID:            p.ID,
 		Name:          p.Name,
 		Details:       p.Details,
-		Image:         p.Image,
+		Image:         p.ImageUrl,
 		MeasuringUnit: p.MeasuringUnit,
 	}
 }
@@ -27,7 +27,7 @@ func NewModel(product *product.Product) *Product {
 	p := &Product{
 		Name:          product.Name,
 		Details:       product.Details,
-		Image:         product.Image,
+		ImageUrl:      product.Image,
 		MeasuringUnit: product.MeasuringUnit,
 	}
 
