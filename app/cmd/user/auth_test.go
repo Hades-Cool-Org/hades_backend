@@ -3,12 +3,11 @@ package user
 import (
 	"context"
 	"hades_backend/app/model/user"
-	userRepository "hades_backend/app/repository/user"
 	"testing"
 )
 
 func TestAuthService_Login(t *testing.T) {
-	repo := &userRepository.MockRepository{
+	repo := &MockRepository{
 		Users: map[uint]*user.User{
 			1: {
 				ID:       1,

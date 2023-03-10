@@ -2,12 +2,12 @@ package middleware
 
 import (
 	"github.com/go-chi/jwtauth/v5"
-	"hades_backend/app/environment"
+	"hades_backend/app/config"
 	"net/http"
 )
 
 func Verifier(ja *jwtauth.JWTAuth) func(http.Handler) http.Handler {
-	if environment.IsProd() {
+	if config.IsProd() {
 		return jwtauth.Verify(ja, jwtauth.TokenFromHeader, jwtauth.TokenFromCookie)
 	}
 
@@ -20,7 +20,7 @@ func Verifier(ja *jwtauth.JWTAuth) func(http.Handler) http.Handler {
 }
 
 func Authenticator(next http.Handler) http.Handler {
-	if environment.IsProd() {
+	if config.IsProd() {
 		return jwtauth.Authenticator(next)
 	}
 

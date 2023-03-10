@@ -1,6 +1,8 @@
 package identity
 
-import "hades_backend/app/environment"
+import (
+	"hades_backend/app/config"
+)
 
 type Identity struct {
 	UserId uint
@@ -15,7 +17,7 @@ const (
 
 func (i *Identity) IsAdmin() bool {
 
-	if !environment.IsProd() {
+	if !config.IsProd() {
 		return true
 	}
 

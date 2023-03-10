@@ -1,15 +1,13 @@
-package environment
+package config
 
-import "hades_backend/app/config"
-
-var Cfg = config.Cfg
+var cfg = Cfg
 
 const (
 	EnvProd = "prod"
 )
 
 func IsProd() bool {
-	return Cfg.Env == EnvProd
+	return cfg.Env == EnvProd
 }
 
 func ExecIfProd(fn func()) {

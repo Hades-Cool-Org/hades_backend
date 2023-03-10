@@ -5,15 +5,14 @@ import (
 	"go.uber.org/zap"
 	"hades_backend/app/logging"
 	"hades_backend/app/model/user"
-	repository "hades_backend/app/repository/user"
 )
 
 type Service struct {
-	repository  repository.Repository
+	repository  Repository
 	authService *AuthService
 }
 
-func NewService(r repository.Repository) *Service {
+func NewService(r Repository) *Service {
 	return &Service{
 		repository:  r,
 		authService: NewAuth(r),

@@ -3,7 +3,7 @@ package middleware
 import (
 	"fmt"
 	"github.com/go-chi/jwtauth/v5"
-	"hades_backend/app/environment"
+	"hades_backend/app/config"
 	"hades_backend/app/identity"
 	"net/http"
 )
@@ -11,7 +11,7 @@ import (
 // User get's user email from JWT token and adds it to the request context.
 func User(next http.Handler) http.Handler {
 
-	if environment.IsProd() {
+	if config.IsProd() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
 

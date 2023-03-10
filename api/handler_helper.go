@@ -13,10 +13,6 @@ import (
 	storeService "hades_backend/app/cmd/store"
 	userService "hades_backend/app/cmd/user"
 	vendorsCmd "hades_backend/app/cmd/vendors"
-	productRepository "hades_backend/app/repository/product"
-	storeRepository "hades_backend/app/repository/store"
-	userRepository "hades_backend/app/repository/user"
-	vendorsRepository "hades_backend/app/repository/vendors"
 )
 
 type CustomHandler interface {
@@ -25,7 +21,7 @@ type CustomHandler interface {
 
 type MySQLHandler struct {
 	DB             *gorm.DB
-	userRepository userRepository.Repository
+	userRepository userService.Repository
 	userService    *userService.Service
 	vendorService  *vendorsCmd.Service
 	productService *productService.Service
@@ -35,16 +31,16 @@ type MySQLHandler struct {
 func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
 	h := &MySQLHandler{DB: db}
 
-	h.userRepository = userRepository.NewMySqlRepository(db)
+	h.userRepository = userService.NewMySqlRepository(db)
 	h.userService = userService.NewService(h.userRepository)
 
-	vRepository := vendorsRepository.NewMySqlRepository(db)
+	vRepository := vendorsCmd.NewMySqlRepository(db)
 	h.vendorService = vendorsCmd.NewService(vRepository)
 
-	pRepository := productRepository.NewMySqlRepository(db)
+	pRepository := productService.NewMySqlRepository(db)
 	h.productService = productService.NewService(pRepository)
 
-	sr := storeRepository.NewMySqlRepository(db)
+	sr := storeService.NewMySqlRepository(db)
 	h.storeService = storeService.NewService(sr, h.userRepository)
 
 	return h

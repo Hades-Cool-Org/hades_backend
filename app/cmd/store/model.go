@@ -2,8 +2,8 @@ package store
 
 import (
 	"gorm.io/gorm"
+	"hades_backend/app/cmd/user"
 	"hades_backend/app/model/store"
-	"hades_backend/app/repository/user"
 )
 
 type Store struct {

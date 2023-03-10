@@ -3,18 +3,17 @@ package store
 import (
 	"context"
 	"fmt"
+	userRepository "hades_backend/app/cmd/user"
 	"hades_backend/app/logging"
 	"hades_backend/app/model/store"
-	storeRepository "hades_backend/app/repository/store"
-	userRepository "hades_backend/app/repository/user"
 )
 
 type Service struct {
-	repository     storeRepository.Repository
+	repository     Repository
 	userRepository userRepository.Repository
 }
 
-func NewService(repository storeRepository.Repository, userRepository userRepository.Repository) *Service {
+func NewService(repository Repository, userRepository userRepository.Repository) *Service {
 	return &Service{
 		repository:     repository,
 		userRepository: userRepository,

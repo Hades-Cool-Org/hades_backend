@@ -5,14 +5,13 @@ import (
 	"go.uber.org/zap"
 	"hades_backend/app/logging"
 	"hades_backend/app/model/vendors"
-	repository "hades_backend/app/repository/vendors"
 )
 
 type Service struct {
-	repository repository.Repository
+	repository Repository
 }
 
-func NewService(r repository.Repository) *Service {
+func NewService(r Repository) *Service {
 	return &Service{
 		repository: r,
 	}

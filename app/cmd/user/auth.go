@@ -9,7 +9,6 @@ import (
 	"hades_backend/api/utils/net"
 	"hades_backend/app/logging"
 	user2 "hades_backend/app/model/user"
-	"hades_backend/app/repository/user"
 	"time"
 )
 
@@ -23,10 +22,10 @@ func init() {
 }
 
 type AuthService struct {
-	repository user.Repository
+	repository Repository
 }
 
-func NewAuth(r user.Repository) *AuthService {
+func NewAuth(r Repository) *AuthService {
 	return &AuthService{repository: r}
 }
 
