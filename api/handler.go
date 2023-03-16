@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 	customMiddleware "hades_backend/api/middleware"
 	"hades_backend/app/database"
@@ -15,6 +16,13 @@ var (
 
 func Handler(l *zap.Logger) http.Handler {
 	r := chi.NewRouter()
+
+	r.Use(
+		cors.Handler(cors.Options{
+			AllowedOrigins: []string{"https://*", "http://*"},
+			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
+			AllowedHeaders: []string{"Authorization", "Content-Type"},
+		}))
 
 	r.Use(middleware.RequestID)
 	r.Use(customMiddleware.Logger(l))
