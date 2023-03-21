@@ -28,11 +28,16 @@ func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
 		r.Post("/", u.Create) //todo: should we update?
 		r.Get("/", u.GetAll)
-		r.Delete("/{order_id}", u.Delete)                             //todo: check permissions
-		r.Post("/{order_id}/product", u.AddProduct)                   //add product // TODO: verificar se aceitar multiplos é uma boa ideia
-		r.Put("/{order_id}/product/{product_id}", u.UpdateProduct)    //add product
-		r.Get("/{order_id}/product/{product_id}", u.GetProduct)       //add product
-		r.Delete("/{order_id}/product/{product_id}", u.DeleteProduct) //add product
+
+		r.Delete("/{order_id}", u.Delete)              //todo: check permissions
+		r.Get("/{order_id}", u.Get)                    //todo: check permissions
+		r.Put("/{order_id}/product", u.UpdateProducts) //add product // TODO: verificar se aceitar multiplos é uma boa ideia
+
+		r.Get("/{order_id}/product/{product_id}", u.GetProduct)
+		r.Get("/{order_id}/product/{product_id}/store/{store_id}", u.GetProduct)
+
+		r.Delete("/{order_id}/product/{product_id}", u.DeleteProduct)                  //add product
+		r.Delete("/{order_id}/product/{product_id}/store/{store_id}", u.DeleteProduct) //add product
 	}
 }
 
@@ -279,7 +284,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &ListResponse{[]*Order{order}})
 }
 
-func (u *Router) AddProduct(w http.ResponseWriter, r *http.Request) {
+func (u *Router) UpdateProducts(w http.ResponseWriter, r *http.Request) {
 
 	data := &AddProductRequest{}
 
