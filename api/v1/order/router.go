@@ -155,7 +155,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 	chi.URLParam(r, stateParam)
 
 	o := &order2.GetOrdersOptions{
-		Request: r,
+		Params: r.URL.Query(),
 	}
 
 	orders, err := order2.GetOrders(r.Context(), o)
@@ -244,7 +244,7 @@ func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request Request
+	var request UpdateRequest
 
 	if err := render.Bind(r, &request); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))

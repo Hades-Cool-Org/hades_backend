@@ -16,7 +16,7 @@ type Order struct {
 	Total       decimal.Decimal `json:"total"`
 
 	Payments []*Payment `json:"payments"`
-	Items    []*Item    `json:"products"`
+	Items    []*Item    `json:"items"`
 }
 
 type Payment struct {
@@ -42,5 +42,10 @@ type Item struct {
 
 func (i *Item) CalculateUnitPrice() decimal.Decimal {
 	//TODO?
+
+	if i.Total.IsZero() {
+		return decimal.Zero
+	}
+
 	return i.Total.Div(decimal.NewFromFloat(i.Quantity))
 }

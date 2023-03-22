@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -16,7 +15,7 @@ import (
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
 	"hades_backend/app/model/order"
-	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -43,7 +42,7 @@ type Order struct {
 	User   *user.User
 
 	State string
-	Total decimal.Decimal `gorm:"type:decimal(7,6);"`
+	Total decimal.Decimal `gorm:"type:decimal(12,3);"`
 
 	Payments []*Payment
 	Items    []*Item
@@ -198,18 +197,18 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *order.Order) er
 		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
-	if orderParams.User.ID != 0 {
+	if orderParams.User != nil && orderParams.User.ID != 0 {
 		u := new(user.User)
 		if err := db.First(u, "id = ?", orderParams.User.ID).Error; err != nil {
-			return cmd.ParseMysqlError(ctx, "order", err)
+			return cmd.ParseMysqlError(ctx, "user", err)
 		}
 		existingOrder.User = u
 	}
 
-	if orderParams.Vendor.ID != 0 {
+	if orderParams.Vendor != nil && orderParams.Vendor.ID != 0 {
 		v := new(vendors.Vendor)
 		if err := db.First(v, "id = ?", orderParams.Vendor.ID).Error; err != nil {
-			return cmd.ParseMysqlError(ctx, "order", err)
+			return cmd.ParseMysqlError(ctx, "vendor", err)
 		}
 		existingOrder.Vendor = v
 	}
@@ -237,15 +236,15 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *order.Order) er
 	if len(orderParams.Items) > 0 {
 		existingOrder.updateItems(orderParams.Items)
 		//does it remove the old items? (not in the new list)
-		//if err := tx.Model(existingOrder).Association("Items").Replace(existingOrder.Items); err != nil {
+		//if err := tx.Model(existingOrder).Association("Items").Sa(existingOrder.Items); err != nil {
 		//	tx.Rollback()
-		//	return ParseMysqlError(ctx, "order", err)
+		//	return cmd.ParseMysqlError(ctx, "order", err)
 		//}
 		prices := existingOrder.CalculatedTotal()
 		existingOrder.Total = prices.Total
 	}
 
-	if err := tx.Save(existingOrder).Error; err != nil {
+	if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(existingOrder).Error; err != nil {
 		tx.Rollback()
 		return cmd.ParseMysqlError(ctx, "order", err)
 	}
@@ -337,7 +336,7 @@ func GetItem(ctx context.Context, orderID, itemID uint) ([]*Item, error) {
 
 // GetOrdersOptions TODO: add pagination
 type GetOrdersOptions struct {
-	Request *http.Request
+	Params url.Values
 }
 
 // GetOrders returns all orders TODO: add pagination
@@ -348,7 +347,8 @@ func GetOrders(ctx context.Context, options *GetOrdersOptions) ([]*Order, error)
 
 	orders := make([]*Order, 0)
 
-	query := options.parseOrderParams(q)
+	query := orderQuery(q)
+	query = options.parseOrderParams(query)
 
 	// not fetching relations for now
 	if err := query.Find(&orders).Error; err != nil {
@@ -445,21 +445,19 @@ func (o *GetOrdersOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
 
 	tableName := (&Order{}).TableName()
 
-	r := o.Request
-
-	if s := chi.URLParam(r, "status"); s != "" {
+	if s := o.Params.Get("status"); s != "" {
 		query = query.Where(tableName+".status = ?", s)
 	}
 
-	if s := chi.URLParam(r, "vendor_id"); s != "" {
-		query = query.Where(tableName+".vendor.id = ?", s)
+	if s := o.Params.Get("vendor_id"); s != "" {
+		query = query.Where(tableName+".vendor_id = ?", s)
 	}
 
-	if s := chi.URLParam(r, "user_id"); s != "" {
-		query = query.Where(tableName+".user.id = ?", s)
+	if s := o.Params.Get("user_id"); s != "" {
+		query = query.Where(tableName+".user_id = ?", s)
 	}
 
-	if s := chi.URLParam(r, "created_at"); s != "" {
+	if s := o.Params.Get("created_at"); s != "" {
 		//TODO: parse date
 		query = query.Where(tableName+".created_at >= ?", s)
 	}
@@ -470,7 +468,7 @@ func (o *GetOrdersOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
 type Payment struct {
 	gorm.Model
 	Type  string
-	Total decimal.Decimal `gorm:"type:decimal(7,6);"`
+	Total decimal.Decimal `gorm:"type:decimal(12,3);"`
 	Text  string          `gorm:"type:text"`
 
 	OrderID uint
@@ -491,7 +489,7 @@ type Item struct {
 
 	Quantity  float64
 	Available float64
-	UnitPrice decimal.Decimal `gorm:"type:decimal(7,6);"`
+	UnitPrice decimal.Decimal `gorm:"type:decimal(12,2);"`
 }
 
 func (i *Item) CalculateTotal() decimal.Decimal {
@@ -506,6 +504,8 @@ func orderQuery(db *gorm.DB) *gorm.DB {
 	return db.
 		Preload("Payments").
 		Preload("Items").
+		Preload("Items.Product").
+		Preload("Items.Store").
 		Preload("Vendor").
 		Preload("User")
 }

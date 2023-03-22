@@ -12,6 +12,39 @@ type Request struct {
 	*order.Order
 }
 
+type UpdateRequest struct {
+	*order.Order
+}
+
+func (p *UpdateRequest) Bind(r *http.Request) error {
+
+	for _, item := range p.Items {
+
+		if item.ProductID == 0 {
+			return errors.New("product id is required")
+		}
+
+		if item.StoreID == 0 {
+			return errors.New("store id is required")
+		}
+
+		errFun := func(message string) error {
+			return errors.New(fmt.Sprintf("ProductId: %d -> %s ", item.ProductID, message))
+		}
+
+		if item.Quantity == 0 {
+			return errFun("quantity cannot be 0")
+		}
+
+		if item.Total.IsZero() {
+			return errFun("Total cannot be empty")
+		}
+
+	}
+
+	return nil
+}
+
 func (p *Request) Bind(r *http.Request) error {
 
 	if p.Vendor == nil {
