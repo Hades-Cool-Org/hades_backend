@@ -43,11 +43,11 @@ func (m *MySqlRepository) Create(ctx context.Context, purchaseList *purchase_lis
 
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Omit("Products").Create(model).Error; err != nil {
+			if err := tx.Omit("Items").Create(model).Error; err != nil {
 				return err
 			}
 
-			err := tx.Model(model).Association("Products").Append(model.Products)
+			err := tx.Model(model).Association("Items").Append(model.Products)
 			if err != nil {
 				return err
 			}
@@ -67,11 +67,11 @@ func (m *MySqlRepository) Update(ctx context.Context, purchaseList *purchase_lis
 
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Where("id = ?", model.ID).Omit("Products").Updates(model).Error; err != nil {
+			if err := tx.Where("id = ?", model.ID).Omit("Items").Updates(model).Error; err != nil {
 				return err
 			}
 
-			err := tx.Model(model).Association("Products").Replace(model.Products)
+			err := tx.Model(model).Association("Items").Replace(model.Products)
 
 			if err != nil {
 				return err
@@ -98,7 +98,7 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 				return err
 			}
 
-			err = tx.Model(&s).Association("Products").Clear()
+			err = tx.Model(&s).Association("Items").Clear()
 			if err != nil {
 				return err
 			}
@@ -114,7 +114,7 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*purchase_list.
 	s.ID = id
 
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
-		m.db.Preload("Products").Preload("User").First(s).Error,
+		m.db.Preload("Items").Preload("User").First(s).Error,
 	)
 
 	if err != nil {
@@ -130,7 +130,7 @@ func (m *MySqlRepository) GetByUserID(ctx context.Context, id uint) ([]*purchase
 
 	var list []*PurchaseList
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
-		m.db.Preload("Products").Preload("User").Where(s).Find(&list).Error,
+		m.db.Preload("Items").Preload("User").Where(s).Find(&list).Error,
 	)
 
 	if err != nil {
@@ -148,7 +148,7 @@ func (m *MySqlRepository) GetByUserID(ctx context.Context, id uint) ([]*purchase
 func (m *MySqlRepository) GetAll(ctx context.Context) ([]*purchase_list.PurchaseList, error) {
 	var list []*PurchaseList
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
-		m.db.Preload("Products").Find(&list).Error,
+		m.db.Preload("Items").Find(&list).Error,
 	)
 
 	if err != nil {

@@ -30,7 +30,7 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	err := db.AutoMigrate(&Vendor{})
 
 	if err != nil {
-		panic("oops!")
+		panic(err)
 	}
 
 	return &MySqlRepository{db: db}

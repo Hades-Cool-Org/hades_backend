@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 	customMiddleware "hades_backend/api/middleware"
 	"hades_backend/api/v1/login"
+	"hades_backend/api/v1/order"
 	"hades_backend/api/v1/product"
 	"hades_backend/api/v1/purchase_list"
 	"hades_backend/api/v1/stock"
@@ -89,6 +90,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 
 		purchaseListRouter := m.initPurchaseListRouter()
 		r.Route(purchaseListRouter.URL(), purchaseListRouter.Router())
+
+		orderRouter := order.NewRouter(m.DB)
+		r.Route(orderRouter.URL(), orderRouter.Router())
 	})
 }
 

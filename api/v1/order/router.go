@@ -4,12 +4,27 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
+	order2 "hades_backend/app/cmd/order"
+	"hades_backend/app/model/order"
+	"hades_backend/app/model/user"
+	"hades_backend/app/model/vendors"
 	"net/http"
+	"strconv"
 	"time"
 )
 
 type Router struct {
+	db *gorm.DB
+}
+
+func NewRouter(db *gorm.DB) *Router {
+	err := db.AutoMigrate(&order2.Order{}, &order2.Item{}, &order2.Payment{})
+	if err != nil {
+		panic(err)
+	}
+	return &Router{db: db}
 }
 
 func (u *Router) URL() string {
@@ -19,6 +34,7 @@ func (u *Router) URL() string {
 const orderIdParam = "order_id"
 const userIdParam = "user_id"
 const productIdParam = "product_id"
+const paymentIdParam = "payment_id"
 
 // const storeIdParam = "store_id"
 const stateParam = "state"
@@ -29,494 +45,372 @@ func (u *Router) Router() func(r chi.Router) {
 		r.Post("/", u.Create) //todo: should we update?
 		r.Get("/", u.GetAll)
 
-		r.Delete("/{order_id}", u.Delete)              //todo: check permissions
-		r.Get("/{order_id}", u.Get)                    //todo: check permissions
-		r.Put("/{order_id}/product", u.UpdateProducts) //add product // TODO: verificar se aceitar multiplos é uma boa ideia
+		r.Get("/{order_id}", u.Get)       //todo: check permissions
+		r.Delete("/{order_id}", u.Delete) //todo: check permissions
+		r.Put("/{order_id}", u.Update)    //todo: check permissions
+
+		r.Post("/{order_id}/payment", u.AddPayment)                   //todo: check permissions
+		r.Delete("/{order_id}/payment/{payment_id}", u.RemovePayment) //todo: check permissions
 
 		r.Get("/{order_id}/product/{product_id}", u.GetProduct)
-		r.Get("/{order_id}/product/{product_id}/store/{store_id}", u.GetProduct)
-
-		r.Delete("/{order_id}/product/{product_id}", u.DeleteProduct)                  //add product
-		r.Delete("/{order_id}/product/{product_id}/store/{store_id}", u.DeleteProduct) //add product
+		r.Delete("/{order_id}/product", u.DeleteProduct) //add product
 	}
 }
 
 func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 
-	data := &Request{}
+	var request Request
 
-	if err := render.Bind(r, data); err != nil {
+	if err := render.Bind(r, &request); err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(err))
 		return
 	}
 
-	//db save
-	order := &Order{
-		ID: "id_from_db",
-		Vendor: &Vendor{
-			ID:      "from_db",
-			Name:    "Joao do Tomate",
-			Address: "Rua 30 de Julho",
-		},
-		StartDate: time.Now().Format(time.RFC3339),
-		State:     "CREATED",
-		User: &User{
-			ID:   "from-db",
-			Name: "Oscar",
-		},
-		Total: "69.2",
-		Payments: []*Payment{
-			{
-				Type:  "MONEY",
-				Total: "10.0",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-			{
-				Type:  "PIX",
-				Total: "59.2",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-		},
-		Products: []*Product{
-			{
-				ID:            "from-db",
-				Name:          "Tomate",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "10.0",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-			{
-				ID:            "from-db",
-				Name:          "Tomate cereja",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "59.2",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-		},
+	o, err := order2.CreateOrder(r.Context(), request.Order)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, &Response{order})
+	render.Render(w, r, &Response{convertOrderToResponse(o)})
 }
 
-func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
+func convertOrderToResponse(o *order2.Order) *order.Order {
 
-	orderId := chi.URLParam(r, orderIdParam)
+	payments := make([]*order.Payment, len(o.Payments))
 
-	if orderId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
-		return
+	for i, p := range o.Payments {
+		payments[i] = &order.Payment{
+			ID:    p.ID,
+			Type:  p.Type,
+			Total: p.Total,
+			Date:  p.CreatedAt.Format(time.RFC3339),
+			Text:  p.Text,
+		}
 	}
 
-	//db delete
-	render.Status(r, http.StatusNoContent)
+	is := convertOrderItems(o.Items)
+
+	z := &order.Order{
+		ID: o.ID,
+		Vendor: &vendors.Vendor{
+			ID:       o.Vendor.ID,
+			Name:     o.Vendor.Name,
+			Email:    o.Vendor.Email,
+			Phone:    o.Vendor.Phone,
+			Cnpj:     o.Vendor.Cnpj,
+			Type:     o.Vendor.Type,
+			Location: o.Vendor.Location,
+			Contact: &vendors.Contact{
+				Name:  o.Vendor.Contact.Name,
+				Email: o.Vendor.Contact.Email,
+				Phone: o.Vendor.Contact.Phone,
+			},
+		},
+		CreatedDate: o.CreatedAt.Format(time.RFC3339),
+		State:       o.State,
+		EndDate: func() *string {
+			if o.CompletedDate != nil {
+				o.CompletedDate.Format(time.RFC3339)
+			}
+			return nil
+		}(),
+		User: &user.User{
+			ID:    o.User.ID,
+			Name:  o.User.Name,
+			Email: o.User.Email,
+			Phone: o.User.Phone,
+		},
+		Total:    o.Total,
+		Payments: payments,
+		Items:    is,
+	}
+
+	return z
 }
 
-func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
+func convertOrderItems(z []*order2.Item) []*order.Item {
+	is := make([]*order.Item, len(z))
 
-	orderId := chi.URLParam(r, orderIdParam)
-
-	if orderId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
-		return
+	for i, p := range z {
+		is[i] = &order.Item{
+			ProductID:     p.ProductID,
+			OrderID:       p.OrderID,
+			StoreID:       p.StoreID,
+			Name:          p.Product.Name,
+			ImageUrl:      p.Product.ImageUrl,
+			MeasuringUnit: p.Product.MeasuringUnit,
+			Quantity:      p.Quantity,
+			Available:     p.Available,
+			Total:         p.CalculateTotal(),
+		}
 	}
-
-	//db get
-	order := &Order{
-		ID: "id_from_db",
-		Vendor: &Vendor{
-			ID:      "from_db",
-			Name:    "Joao do Tomate",
-			Address: "Rua 30 de Julho",
-		},
-		StartDate: time.Now().Format(time.RFC3339),
-		State:     "CREATED",
-		User: &User{
-			ID:   "from-db",
-			Name: "Oscar",
-		},
-		Total: "69.2",
-		Payments: []*Payment{
-			{
-				Type:  "MONEY",
-				Total: "10.0",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-			{
-				Type:  "PIX",
-				Total: "59.2",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-		},
-		Products: []*Product{
-			{
-				ID:            "from-db",
-				Name:          "Tomate",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "10.0",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-			{
-				ID:            "from-db",
-				Name:          "Tomate cereja",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "59.2",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-		},
-	}
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{order})
+	return is
 }
 
 func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	state := chi.URLParam(r, stateParam)
+	chi.URLParam(r, stateParam)
 
-	dateStart := chi.URLParam(r, dateStartParam)
-	if dateStart == "" {
-		dateStart = time.Now().Format(time.RFC3339)
+	o := &order2.GetOrdersOptions{
+		Request: r,
 	}
 
-	userId := chi.URLParam(r, userIdParam)
+	orders, err := order2.GetOrders(r.Context(), o)
 
-	//db get
-	order := &Order{
-		ID: "id_from_db",
-		Vendor: &Vendor{
-			ID:      "from_db",
-			Name:    "Joao do Tomate",
-			Address: "Rua 30 de Julho",
-		},
-		StartDate: dateStart,
-		State:     state,
-		User: &User{
-			ID:   userId,
-			Name: "Oscar",
-		},
-		Total: "69.2",
-		Payments: []*Payment{
-			{
-				Type:  "MONEY",
-				Total: "10.0",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-			{
-				Type:  "PIX",
-				Total: "59.2",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-		},
-		Products: []*Product{
-			{
-				ID:            "from-db",
-				Name:          "Tomate",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "10.0",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-			{
-				ID:            "from-db",
-				Name:          "Tomate cereja",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "59.2",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-		},
-	}
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, &ListResponse{[]*Order{order}})
-}
-
-func (u *Router) UpdateProducts(w http.ResponseWriter, r *http.Request) {
-
-	data := &AddProductRequest{}
-
-	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(err))
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
-	orderId := chi.URLParam(r, orderIdParam)
+	respOrders := make([]*order.Order, len(orders))
 
-	if orderId == "" {
+	for i, o := range orders {
+		respOrders[i] = convertOrderToResponse(o)
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &ListResponse{respOrders})
+}
+
+func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
+
+	oID := chi.URLParam(r, orderIdParam)
+
+	if oID == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
 		return
 	}
 
-	//db add
+	oIDInt, err := strconv.Atoi(oID)
 
-	order := &Order{
-		ID: "id_from_db",
-		Vendor: &Vendor{
-			ID:      "from_db",
-			Name:    "Joao do Tomate",
-			Address: "Rua 30 de Julho",
-		},
-		StartDate: time.Now().Format(time.RFC3339),
-		State:     "CREATED",
-		User: &User{
-			ID:   "from-db",
-			Name: "Oscar",
-		},
-		Total: "69.2",
-		Payments: []*Payment{
-			{
-				Type:  "MONEY",
-				Total: "10.0",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-			{
-				Type:  "PIX",
-				Total: "59.2",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-		},
-		Products: []*Product{
-			{
-				ID:            "from-db",
-				Name:          "Tomate",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "10.0",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-			{
-				ID:            "from-db",
-				Name:          "Tomate cereja",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "59.2",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-		},
-	}
-
-	for _, product := range data.Products {
-		order.Products = append(order.Products, product)
-	}
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{order})
-}
-
-func (u *Router) UpdateProduct(w http.ResponseWriter, r *http.Request) {
-
-	data := &UpdateProductRequest{}
-
-	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(err))
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
 		return
 	}
 
-	orderId := chi.URLParam(r, orderIdParam)
+	o, err := order2.GetOrder(r.Context(), uint(oIDInt))
 
-	if orderId == "" {
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &Response{convertOrderToResponse(o)})
+}
+
+func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
+
+	oID := chi.URLParam(r, orderIdParam)
+
+	if oID == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
 		return
 	}
 
-	productId := chi.URLParam(r, productIdParam)
+	oIDInt, err := strconv.Atoi(oID)
 
-	if productId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
 		return
 	}
 
-	data.ID = productId
+	err = order2.DeleteOrder(r.Context(), uint(oIDInt))
 
-	order := &Order{
-		ID: "id_from_db",
-		Vendor: &Vendor{
-			ID:      "from_db",
-			Name:    "Joao do Tomate",
-			Address: "Rua 30 de Julho",
-		},
-		StartDate: time.Now().Format(time.RFC3339),
-		State:     "CREATED",
-		User: &User{
-			ID:   "from-db",
-			Name: "Oscar",
-		},
-		Total: "69.2",
-		Payments: []*Payment{
-			{
-				Type:  "MONEY",
-				Total: "10.0",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-			{
-				Type:  "PIX",
-				Total: "59.2",
-				Date:  time.Now().Format(time.RFC3339),
-			},
-		},
-		Products: []*Product{
-			{
-				ID:            "from-db",
-				Name:          "Tomate",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "10.0",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-			{
-				ID:            "from-db",
-				Name:          "Tomate cereja",
-				Image:         "url",
-				MeasuringUnit: "UN",
-				Quantity:      10,
-				Total:         "59.2",
-				Stores: []*Store{
-					{
-						ID:       "from-db",
-						Name:     "Loja1",
-						Address:  "Rua 30 de julho",
-						Quantity: 10,
-					},
-				},
-			},
-		},
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
-	order.Products = append(order.Products, data.Product)
+	render.Status(r, http.StatusNoContent)
+}
+
+func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
+
+	oID := chi.URLParam(r, orderIdParam)
+
+	if oID == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
+		return
+	}
+
+	oIDInt, err := strconv.Atoi(oID)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
+		return
+	}
+
+	var request Request
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	request.ID = uint(oIDInt)
+
+	err = order2.UpdateOrder(r.Context(), uint(oIDInt), request.Order)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{order})
+}
+
+func (u *Router) AddPayment(w http.ResponseWriter, r *http.Request) {
+
+	oID := chi.URLParam(r, orderIdParam)
+
+	if oID == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
+		return
+	}
+
+	oIDInt, err := strconv.Atoi(oID)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
+		return
+	}
+
+	var request PaymentRequest
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	_, err = order2.AddPayment(r.Context(), uint(oIDInt), request.Payment)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+}
+
+func (u *Router) RemovePayment(w http.ResponseWriter, r *http.Request) {
+
+	oID := chi.URLParam(r, orderIdParam)
+
+	if oID == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
+		return
+	}
+
+	oIDInt, err := strconv.Atoi(oID)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
+		return
+	}
+
+	pID := chi.URLParam(r, paymentIdParam)
+
+	if pID == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("paymentId is empty")))
+		return
+	}
+
+	pIDInt, err := strconv.Atoi(pID)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("paymentId is not a number: "+err.Error())))
+		return
+	}
+
+	err = order2.RemovePayment(r.Context(), uint(oIDInt), uint(pIDInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
 }
 
 func (u *Router) GetProduct(w http.ResponseWriter, r *http.Request) {
 
-	orderId := chi.URLParam(r, orderIdParam)
+	oID := chi.URLParam(r, orderIdParam)
 
-	if orderId == "" {
+	if oID == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
 		return
 	}
 
-	productId := chi.URLParam(r, productIdParam)
+	oIDInt, err := strconv.Atoi(oID)
 
-	if productId == "" {
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
+		return
+	}
+
+	pID := chi.URLParam(r, productIdParam)
+
+	if pID == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
 		return
 	}
 
-	product := &Product{
-		ID:            "from-db",
-		Name:          "Tomate",
-		Image:         "url",
-		MeasuringUnit: "UN",
-		Quantity:      10,
-		Total:         "10.0",
-		Stores: []*Store{
-			{
-				ID:       "from-db",
-				Name:     "Loja1",
-				Address:  "Rua 30 de julho",
-				Quantity: 10,
-			},
-		},
+	pIDInt, err := strconv.Atoi(pID)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
+		return
+	}
+
+	is, err := order2.GetItem(r.Context(), uint(oIDInt), uint(pIDInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &ProductResponse{product})
+	render.Render(w, r, &ListItemResponse{convertOrderItems(is)})
+
 }
 
 func (u *Router) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 
-	orderId := chi.URLParam(r, orderIdParam)
+	oID := chi.URLParam(r, orderIdParam)
 
-	if orderId == "" {
+	if oID == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is empty")))
 		return
 	}
 
-	productId := chi.URLParam(r, productIdParam)
+	oIDInt, err := strconv.Atoi(oID)
 
-	if productId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("orderId is not a number: "+err.Error())))
 		return
 	}
-	//db delete
-	render.Status(r, http.StatusNoContent)
+
+	var request DeleteItemsRequest
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	for _, item := range request.Items {
+		item.OrderID = uint(oIDInt)
+	}
+
+	err = order2.RemoveItems(r.Context(), uint(oIDInt), request.Items)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
 }

@@ -2,11 +2,14 @@ package order
 
 import (
 	"errors"
+	"fmt"
+	"github.com/shopspring/decimal"
+	"hades_backend/app/model/order"
 	"net/http"
 )
 
 type Request struct {
-	*Order
+	*order.Order
 }
 
 func (p *Request) Bind(r *http.Request) error {
@@ -15,7 +18,7 @@ func (p *Request) Bind(r *http.Request) error {
 		return errors.New("vendor is requiredl")
 	}
 
-	if p.Vendor.ID == "" {
+	if p.Vendor.ID == 0 {
 		return errors.New("vendorId is required")
 	}
 
@@ -23,14 +26,39 @@ func (p *Request) Bind(r *http.Request) error {
 		return errors.New("user is required")
 	}
 
-	if p.User.ID == "" {
+	if p.User.ID == 0 {
 		return errors.New("user id is required")
 	}
+
+	for _, item := range p.Items {
+
+		if item.ProductID == 0 {
+			return errors.New("product id is required")
+		}
+
+		if item.StoreID == 0 {
+			return errors.New("store id is required")
+		}
+
+		errFun := func(message string) error {
+			return errors.New(fmt.Sprintf("ProductId: %d -> %s ", item.ProductID, message))
+		}
+
+		if item.Quantity == 0 {
+			return errFun("quantity cannot be 0")
+		}
+
+		if item.Total == decimal.Zero {
+			return errFun("Total cannot be empty")
+		}
+
+	}
+
 	return nil
 }
 
 type Response struct {
-	*Order
+	*order.Order
 }
 
 func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
@@ -38,95 +66,88 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type ListResponse struct {
-	Orders []*Order `json:"orders"`
+	Orders []*order.Order `json:"orders"`
 }
 
 func (r3 *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-type AddProductRequest struct {
-	Products []*Product `json:"products"`
+type DeleteItemsRequest struct {
+	Items []*order.Item `json:"items"`
 }
 
-func (p *AddProductRequest) Bind(r *http.Request) error {
+func (p *DeleteItemsRequest) Bind(r *http.Request) error {
 
-	if len(p.Products) == 0 {
+	if len(p.Items) == 0 {
 		return errors.New("products cannot be empty")
 	}
 
-	for _, product := range p.Products {
-		if product.ID == "" {
+	for _, item := range p.Items {
+
+		if item.ProductID == 0 {
 			return errors.New("product id is required")
 		}
 
-		errFun := func(message string) error {
-			return errors.New("ProductId: " + product.ID + " -> " + message)
+		if item.StoreID == 0 {
+			return errors.New("store id is required")
 		}
 
-		if product.Quantity == 0 {
-			return errFun("quantity cannot be 0")
-		}
-
-		if product.Total == "" {
-			return errFun("PricePerItem cannot be empty")
-		}
-
-		if len(product.Stores) == 0 {
-			return errFun("store cannot be empty")
-		}
-
-		for _, store := range product.Stores {
-
-			if store.ID == "" {
-				return errFun("storeId cannot be empty")
-			}
-
-			if store.Quantity == 0 {
-				return errFun("quantity cannot be 0")
-			}
-		}
 	}
 
 	return nil
 }
 
-type UpdateProductRequest struct {
-	*Product
+type UpdateItemRequest struct {
+	*order.Item
 }
 
-func (p *UpdateProductRequest) Bind(r *http.Request) error {
+func (p *UpdateItemRequest) Bind(r *http.Request) error {
 
 	errFun := func(message string) error {
-		return errors.New("ProductId: " + p.ID + " -> " + message)
+		return errors.New(fmt.Sprintf("ProductId: %d -> %s ", p.ProductID, message))
 	}
 
 	if p.Quantity == 0 {
 		return errFun("quantity cannot be 0")
 	}
 
-	if len(p.Stores) == 0 {
-		return errFun("store cannot be empty")
-	}
-
-	for _, store := range p.Stores {
-
-		if store.ID == "" {
-			return errFun("storeId cannot be empty")
-		}
-
-		if store.Quantity == 0 {
-			return errFun("quantity cannot be 0")
-		}
+	if p.Total == decimal.Zero {
+		return errFun("Total cannot be empty")
 	}
 
 	return nil
 }
 
-type ProductResponse struct {
-	*Product
+type ItemResponse struct {
+	*order.Item
 }
 
-func (p ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
+func (p ItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type ListItemResponse struct {
+	Items []*order.Item `json:"items"`
+}
+
+func (p ListItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type PaymentRequest struct {
+	*order.Payment
+}
+
+func (p *PaymentRequest) Bind(r *http.Request) error {
+
+	if p.Type == "" {
+		return errors.New("payment type is required")
+	}
+
+	if p.Total == decimal.Zero {
+		return errors.New("payment total is required")
+	}
+
 	return nil
 }

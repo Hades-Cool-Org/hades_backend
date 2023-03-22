@@ -1,11 +1,14 @@
-package cmd
+package order
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+	"hades_backend/app/cmd"
 	"hades_backend/app/cmd/product"
 	"hades_backend/app/cmd/store"
 	"hades_backend/app/cmd/user"
@@ -13,9 +16,10 @@ import (
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
 	"hades_backend/app/model/order"
-	"net/url"
+	"net/http"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Status string
@@ -31,12 +35,20 @@ const (
 
 type Order struct {
 	gorm.Model
+
+	VendorID uint
 	Vendor   *vendors.Vendor
-	State    string
-	User     *user.User
-	Total    decimal.Decimal `gorm:"type:decimal(7,6);"`
+
+	UserID uint
+	User   *user.User
+
+	State string
+	Total decimal.Decimal `gorm:"type:decimal(7,6);"`
+
 	Payments []*Payment
 	Items    []*Item
+
+	CompletedDate *time.Time //TODO: mudança de estado setar isso
 
 	ModificationLock sync.Mutex `json:"-" sql:"-" gorm:"-"`
 }
@@ -45,13 +57,13 @@ func (o Order) TableName() string {
 	return "orders"
 }
 
-type OrderPrices struct {
+type Prices struct {
 	Total          decimal.Decimal
 	PendingPayment decimal.Decimal
 	Payed          decimal.Decimal
 }
 
-func (o *Order) CalculatedTotal() *OrderPrices {
+func (o *Order) CalculatedTotal() *Prices {
 
 	var total = decimal.Zero
 	var payed = decimal.Zero
@@ -67,7 +79,7 @@ func (o *Order) CalculatedTotal() *OrderPrices {
 
 	pendingPayment = total.Sub(payed)
 
-	return &OrderPrices{
+	return &Prices{
 		Total:          total,
 		PendingPayment: pendingPayment,
 		Payed:          payed,
@@ -84,8 +96,8 @@ func (o *Order) UpdateTotal() {
 	o.Total = o.CalculatedTotal().Total
 }
 
-// UpInsertItems updates the items of the order
-func (o *Order) UpInsertItems(newItems []*order.Item) {
+// updateItems updates the items of the order - NO ITEMS ARE REMOVED
+func (o *Order) updateItems(newItems []*order.Item) {
 
 	o.ModificationLock.Lock()
 	defer o.ModificationLock.Unlock()
@@ -100,22 +112,34 @@ func (o *Order) UpInsertItems(newItems []*order.Item) {
 		mapItem[fnKey(item.StoreID, item.ProductID)] = item
 	}
 
+	i := make([]*Item, 0)
+
 	for _, item := range newItems {
 		key := fnKey(item.StoreID, item.ProductID)
+
+		p := item.CalculateUnitPrice()
+
 		if _, ok := mapItem[key]; ok {
 			mapItem[key].Quantity = item.Quantity
 			mapItem[key].Available = item.Available
+			mapItem[key].UnitPrice = p
 		} else {
-			o.Items = append(o.Items, &Item{
-				OrderID:      o.ID,
-				ProductID:    item.ProductID,
-				StoreID:      item.StoreID,
-				Quantity:     item.Quantity,
-				Available:    item.Available,
-				PricePerItem: item.CalculateUnitPrice(),
+			i = append(i, &Item{
+				OrderID:   o.ID,
+				ProductID: item.ProductID,
+				StoreID:   item.StoreID,
+				Quantity:  item.Quantity,
+				Available: item.Available,
+				UnitPrice: p,
 			})
 		}
 	}
+
+	for _, item := range mapItem {
+		i = append(i, item)
+	}
+
+	o.Items = i
 }
 
 // RemoveItems removes given items from the order
@@ -130,7 +154,7 @@ func RemoveItems(ctx context.Context, orderID uint, items []*order.Item) error {
 	existingOrder := new(Order)
 
 	if err := orderQuery(db).First(existingOrder, "id = ?", orderID).Error; err != nil {
-		return ParseMysqlError(ctx, "order", err)
+		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	existingOrder.ModificationLock.Lock()
@@ -138,13 +162,13 @@ func RemoveItems(ctx context.Context, orderID uint, items []*order.Item) error {
 
 	itemsToRemove := make([]*Item, 0)
 
-	for _, item := range existingOrder.Items {
+	for _, item := range items {
 		i := &Item{OrderID: orderID, ProductID: item.ProductID, StoreID: item.StoreID}
 		itemsToRemove = append(itemsToRemove, i)
 	}
 
 	if err := db.Delete(itemsToRemove).Error; err != nil {
-		return ParseMysqlError(ctx, "order", err)
+		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	l.Info(fmt.Sprintf("Removed items from order [%d]", orderID))
@@ -154,7 +178,7 @@ func RemoveItems(ctx context.Context, orderID uint, items []*order.Item) error {
 
 // UpdateOrder updates an order
 // items are not removed if they are not in the new list
-func UpdateOrder(ctx context.Context, orderID uint, orderParams order.Order) error {
+func UpdateOrder(ctx context.Context, orderID uint, orderParams *order.Order) error {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
@@ -171,13 +195,13 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams order.Order) err
 	existingOrder := new(Order)
 
 	if err := orderQuery(db).First(existingOrder, "id = ?", orderID).Error; err != nil {
-		return ParseMysqlError(ctx, "order", err)
+		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	if orderParams.User.ID != 0 {
 		u := new(user.User)
 		if err := db.First(u, "id = ?", orderParams.User.ID).Error; err != nil {
-			return ParseMysqlError(ctx, "order", err)
+			return cmd.ParseMysqlError(ctx, "order", err)
 		}
 		existingOrder.User = u
 	}
@@ -185,7 +209,7 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams order.Order) err
 	if orderParams.Vendor.ID != 0 {
 		v := new(vendors.Vendor)
 		if err := db.First(v, "id = ?", orderParams.Vendor.ID).Error; err != nil {
-			return ParseMysqlError(ctx, "order", err)
+			return cmd.ParseMysqlError(ctx, "order", err)
 		}
 		existingOrder.Vendor = v
 	}
@@ -196,22 +220,22 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams order.Order) err
 		newPayments := make([]*Payment, 0)
 		for _, payment := range orderParams.Payments {
 			p := &Payment{
-				Type:   payment.Type,
-				Total:  payment.Total,
-				OderID: orderID,
-				Text:   payment.Text,
+				Type:    payment.Type,
+				Total:   payment.Total,
+				OrderID: orderID,
+				Text:    payment.Text,
 			}
 			newPayments = append(newPayments, p)
 		}
 
 		if err := tx.Model(existingOrder).Association("Payments").Replace(newPayments); err != nil {
 			tx.Rollback()
-			return ParseMysqlError(ctx, "order", err)
+			return cmd.ParseMysqlError(ctx, "order", err)
 		}
 	}
 
 	if len(orderParams.Items) > 0 {
-		existingOrder.UpInsertItems(orderParams.Items)
+		existingOrder.updateItems(orderParams.Items)
 		//does it remove the old items? (not in the new list)
 		//if err := tx.Model(existingOrder).Association("Items").Replace(existingOrder.Items); err != nil {
 		//	tx.Rollback()
@@ -223,12 +247,12 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams order.Order) err
 
 	if err := tx.Save(existingOrder).Error; err != nil {
 		tx.Rollback()
-		return ParseMysqlError(ctx, "order", err)
+		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		return ParseMysqlError(ctx, "order", err)
+		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	l.Info(fmt.Sprintf("Updated order [%d] ", orderID))
@@ -238,7 +262,7 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams order.Order) err
 
 // CreateOrder creates a new order
 // no payments nor items are added
-func CreateOrder(ctx context.Context, orderParams order.Order) (*Order, error) {
+func CreateOrder(ctx context.Context, orderParams *order.Order) (*Order, error) {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
@@ -256,7 +280,7 @@ func CreateOrder(ctx context.Context, orderParams order.Order) (*Order, error) {
 	if orderParams.User.ID != 0 {
 		u := new(user.User)
 		if err := db.First(u, "id = ?", orderParams.User.ID).Error; err != nil {
-			return nil, ParseMysqlError(ctx, "user", err)
+			return nil, cmd.ParseMysqlError(ctx, "user", err)
 		}
 		o.User = u
 	}
@@ -264,13 +288,13 @@ func CreateOrder(ctx context.Context, orderParams order.Order) (*Order, error) {
 	if orderParams.Vendor.ID != 0 {
 		v := new(vendors.Vendor)
 		if err := db.First(v, "id = ?", orderParams.Vendor.ID).Error; err != nil {
-			return nil, ParseMysqlError(ctx, "vendor", err)
+			return nil, cmd.ParseMysqlError(ctx, "vendor", err)
 		}
 		o.Vendor = v
 	}
 
 	if err := db.Omit("Items").Omit("Payments").Create(o).Error; err != nil {
-		return nil, ParseMysqlError(ctx, "order", err)
+		return nil, cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	l.Info(fmt.Sprintf("Created order [%d] ", o.ID))
@@ -287,7 +311,7 @@ func GetOrder(ctx context.Context, orderID uint) (*Order, error) {
 	o := new(Order)
 
 	if err := orderQuery(db).First(o, "id = ?", orderID).Error; err != nil {
-		return nil, ParseMysqlError(ctx, "order", err)
+		return nil, cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	l.Info(fmt.Sprintf("Found order [%d] ", o.ID))
@@ -295,26 +319,40 @@ func GetOrder(ctx context.Context, orderID uint) (*Order, error) {
 	return o, nil
 }
 
-type GetOrdersOptions struct {
-	Params url.Values
-
-	Offset int
-	Limit  int
-}
-
-// GetOrders returns all orders
-func GetOrders(ctx context.Context, options *GetOrdersOptions) ([]*Order, error) {
+func GetItem(ctx context.Context, orderID, itemID uint) ([]*Item, error) {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
 
+	i := new([]*Item)
+
+	if err := db.Find(i, "order_id = ? AND product_id = ?", orderID, itemID).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "order", err)
+	}
+
+	l.Info(fmt.Sprintf("Found item [%d] in order [%d]", itemID, orderID))
+
+	return *i, nil
+}
+
+// GetOrdersOptions TODO: add pagination
+type GetOrdersOptions struct {
+	Request *http.Request
+}
+
+// GetOrders returns all orders TODO: add pagination
+func GetOrders(ctx context.Context, options *GetOrdersOptions) ([]*Order, error) {
+
+	l := logging.FromContext(ctx)
+	q := database.DB.WithContext(ctx)
+
 	orders := make([]*Order, 0)
 
-	query := parseOrderParams(db, options.Params)
+	query := options.parseOrderParams(q)
 
 	// not fetching relations for now
 	if err := query.Find(&orders).Error; err != nil {
-		return nil, ParseMysqlError(ctx, "order", err)
+		return nil, cmd.ParseMysqlError(ctx, "order", err)
 	}
 
 	l.Info(fmt.Sprintf("Found %d orders", len(orders)))
@@ -322,23 +360,106 @@ func GetOrders(ctx context.Context, options *GetOrdersOptions) ([]*Order, error)
 	return orders, nil
 }
 
-func parseOrderParams(query *gorm.DB, params url.Values) *gorm.DB {
+func AddPayment(ctx context.Context, orderID uint, paymentParams *order.Payment) (*Payment, error) {
+
+	l := logging.FromContext(ctx)
+	db := database.DB.WithContext(ctx)
+
+	o := new(Order)
+
+	if err := db.First(o, "id = ?", orderID).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "order", err)
+	}
+
+	p := &Payment{
+		Type:    paymentParams.Type,
+		Total:   paymentParams.Total,
+		OrderID: orderID,
+		Text:    paymentParams.Text,
+	}
+
+	if err := db.Create(p).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "payment", err)
+	}
+
+	l.Info(fmt.Sprintf("Added payment [%d] to order [%d]", p.ID, orderID))
+
+	return p, nil
+}
+
+func RemovePayment(ctx context.Context, orderID uint, paymentID uint) error {
+
+	l := logging.FromContext(ctx)
+	db := database.DB.WithContext(ctx)
+
+	p := new(Payment)
+
+	if err := db.First(p, "id = ?", paymentID).Error; err != nil {
+		return cmd.ParseMysqlError(ctx, "payment", err)
+	}
+
+	if err := db.Delete(p).Error; err != nil {
+		return cmd.ParseMysqlError(ctx, "payment", err)
+	}
+
+	l.Info(fmt.Sprintf("Removed payment [%d] from order [%d]", p.ID, orderID))
+
+	return nil
+}
+
+func DeleteOrder(ctx context.Context, orderID uint) error {
+
+	l := logging.FromContext(ctx)
+	db := database.DB.WithContext(ctx)
+
+	o := new(Order)
+
+	if err := db.First(o, "id = ?", orderID).Error; err != nil {
+		return cmd.ParseMysqlError(ctx, "order", err)
+	}
+
+	if err := db.Delete(o).Error; err != nil {
+		return cmd.ParseMysqlError(ctx, "order", err)
+	}
+
+	l.Info(fmt.Sprintf("Deleted order [%d]", orderID))
+
+	return nil
+}
+
+func (o *Order) BeforeDelete(tx *gorm.DB) error {
+
+	delModels := map[string]interface{}{
+		"items":    &[]Item{},
+		"payments": &[]Payment{},
+	}
+	for name, dm := range delModels {
+		if result := tx.Delete(dm, "order_id = ?", o.ID); result.Error != nil {
+			return errors.Wrap(result.Error, fmt.Sprintf("Error deleting %s records", name))
+		}
+	}
+	return nil
+}
+
+func (o *GetOrdersOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
 
 	tableName := (&Order{}).TableName()
 
-	if s := params.Get("status"); s != "" {
+	r := o.Request
+
+	if s := chi.URLParam(r, "status"); s != "" {
 		query = query.Where(tableName+".status = ?", s)
 	}
 
-	if s := params.Get("vendor_id"); s != "" {
+	if s := chi.URLParam(r, "vendor_id"); s != "" {
 		query = query.Where(tableName+".vendor.id = ?", s)
 	}
 
-	if s := params.Get("user_id"); s != "" {
+	if s := chi.URLParam(r, "user_id"); s != "" {
 		query = query.Where(tableName+".user.id = ?", s)
 	}
 
-	if s := params.Get("created_at"); s != "" {
+	if s := chi.URLParam(r, "created_at"); s != "" {
 		//TODO: parse date
 		query = query.Where(tableName+".created_at >= ?", s)
 	}
@@ -348,10 +469,11 @@ func parseOrderParams(query *gorm.DB, params url.Values) *gorm.DB {
 
 type Payment struct {
 	gorm.Model
-	Type   string
-	Total  decimal.Decimal `gorm:"type:decimal(7,6);"`
-	OderID uint
-	Text   string `gorm:"type:text"`
+	Type  string
+	Total decimal.Decimal `gorm:"type:decimal(7,6);"`
+	Text  string          `gorm:"type:text"`
+
+	OrderID uint
 }
 
 func (p Payment) TableName() string {
@@ -367,13 +489,13 @@ type Item struct {
 	StoreID uint `gorm:"primaryKey;autoIncrement:false"`
 	Store   *store.Store
 
-	Quantity     float64
-	Available    float64
-	PricePerItem decimal.Decimal `gorm:"type:decimal(7,6);"`
+	Quantity  float64
+	Available float64
+	UnitPrice decimal.Decimal `gorm:"type:decimal(7,6);"`
 }
 
 func (i *Item) CalculateTotal() decimal.Decimal {
-	return i.PricePerItem.Mul(decimal.NewFromFloat(i.Quantity))
+	return i.UnitPrice.Mul(decimal.NewFromFloat(i.Quantity))
 }
 
 func (i Item) TableName() string {
