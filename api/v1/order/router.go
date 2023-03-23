@@ -7,9 +7,7 @@ import (
 	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	order2 "hades_backend/app/cmd/order"
-	"hades_backend/app/model/order"
-	"hades_backend/app/model/user"
-	"hades_backend/app/model/vendors"
+	"hades_backend/app/model"
 	"net/http"
 	"strconv"
 	"time"
@@ -32,13 +30,11 @@ func (u *Router) URL() string {
 }
 
 const orderIdParam = "order_id"
-const userIdParam = "user_id"
 const productIdParam = "product_id"
 const paymentIdParam = "payment_id"
 
 // const storeIdParam = "store_id"
 const stateParam = "state"
-const dateStartParam = "dateStart"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
@@ -77,12 +73,12 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &Response{convertOrderToResponse(o)})
 }
 
-func convertOrderToResponse(o *order2.Order) *order.Order {
+func convertOrderToResponse(o *order2.Order) *model.Order {
 
-	payments := make([]*order.Payment, len(o.Payments))
+	payments := make([]*model.Payment, len(o.Payments))
 
 	for i, p := range o.Payments {
-		payments[i] = &order.Payment{
+		payments[i] = &model.Payment{
 			ID:    p.ID,
 			Type:  p.Type,
 			Total: p.Total,
@@ -93,9 +89,9 @@ func convertOrderToResponse(o *order2.Order) *order.Order {
 
 	is := convertOrderItems(o.Items)
 
-	z := &order.Order{
+	z := &model.Order{
 		ID: o.ID,
-		Vendor: &vendors.Vendor{
+		Vendor: &model.Vendor{
 			ID:       o.Vendor.ID,
 			Name:     o.Vendor.Name,
 			Email:    o.Vendor.Email,
@@ -103,7 +99,7 @@ func convertOrderToResponse(o *order2.Order) *order.Order {
 			Cnpj:     o.Vendor.Cnpj,
 			Type:     o.Vendor.Type,
 			Location: o.Vendor.Location,
-			Contact: &vendors.Contact{
+			Contact: &model.Contact{
 				Name:  o.Vendor.Contact.Name,
 				Email: o.Vendor.Contact.Email,
 				Phone: o.Vendor.Contact.Phone,
@@ -117,7 +113,7 @@ func convertOrderToResponse(o *order2.Order) *order.Order {
 			}
 			return nil
 		}(),
-		User: &user.User{
+		User: &model.User{
 			ID:    o.User.ID,
 			Name:  o.User.Name,
 			Email: o.User.Email,
@@ -131,11 +127,11 @@ func convertOrderToResponse(o *order2.Order) *order.Order {
 	return z
 }
 
-func convertOrderItems(z []*order2.Item) []*order.Item {
-	is := make([]*order.Item, len(z))
+func convertOrderItems(z []*order2.Item) []*model.Item {
+	is := make([]*model.Item, len(z))
 
 	for i, p := range z {
-		is[i] = &order.Item{
+		is[i] = &model.Item{
 			ProductID:     p.ProductID,
 			OrderID:       p.OrderID,
 			StoreID:       p.StoreID,
@@ -165,7 +161,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respOrders := make([]*order.Order, len(orders))
+	respOrders := make([]*model.Order, len(orders))
 
 	for i, o := range orders {
 		respOrders[i] = convertOrderToResponse(o)

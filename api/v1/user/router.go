@@ -7,7 +7,7 @@ import (
 	"hades_backend/api/middleware"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/user"
-	userModel "hades_backend/app/model/user"
+	userModel "hades_backend/app/model"
 	"net/http"
 	"strconv"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"hades_backend/app/logging"
-	"hades_backend/app/model/vendors"
+	"hades_backend/app/model"
 )
 
 type Service struct {
@@ -17,14 +17,14 @@ func NewService(r Repository) *Service {
 	}
 }
 
-func (s *Service) GetVendor(ctx context.Context, id uint) (*vendors.Vendor, error) {
+func (s *Service) GetVendor(ctx context.Context, id uint) (*model.Vendor, error) {
 	logger := logging.FromContext(ctx)
 	logger.Info("getting vendor", zap.Uint("id", id))
 
 	return s.repository.GetByID(ctx, id)
 }
 
-func (s *Service) CreateVendor(ctx context.Context, vendor *vendors.Vendor) (uint, error) {
+func (s *Service) CreateVendor(ctx context.Context, vendor *model.Vendor) (uint, error) {
 	logger := logging.FromContext(ctx)
 	logger.Info("creating vendor", zap.String("name", vendor.Name))
 
@@ -37,7 +37,7 @@ func (s *Service) CreateVendor(ctx context.Context, vendor *vendors.Vendor) (uin
 	return id, nil
 }
 
-func (s *Service) UpdateVendor(ctx context.Context, vendorId uint, vendor *vendors.Vendor) error {
+func (s *Service) UpdateVendor(ctx context.Context, vendorId uint, vendor *model.Vendor) error {
 	logger := logging.FromContext(ctx)
 	logger.Info("updating vendor", zap.String("name", vendor.Name), zap.Uint("id", vendorId))
 
@@ -52,7 +52,7 @@ func (s *Service) DeleteVendor(ctx context.Context, vendorId uint) error {
 	return s.repository.Delete(ctx, vendorId)
 }
 
-func (s *Service) GetVendors(ctx context.Context) ([]*vendors.Vendor, error) {
+func (s *Service) GetVendors(ctx context.Context) ([]*model.Vendor, error) {
 	logger := logging.FromContext(ctx)
 	logger.Info("getting vendors")
 

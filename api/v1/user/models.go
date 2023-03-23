@@ -2,16 +2,16 @@ package user
 
 import (
 	"errors"
-	"hades_backend/app/model/user"
+	"hades_backend/app/model"
 	"net/http"
 )
 
 type Request struct {
-	*user.User
+	*model.User
 }
 
 type Response struct {
-	*user.User
+	*model.User
 }
 
 func (u *Response) Render(w http.ResponseWriter, r *http.Request) error {

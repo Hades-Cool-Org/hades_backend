@@ -4,16 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shopspring/decimal"
-	"hades_backend/app/model/order"
+	"hades_backend/app/model"
 	"net/http"
 )
 
 type Request struct {
-	*order.Order
+	*model.Order
 }
 
 type UpdateRequest struct {
-	*order.Order
+	*model.Order
 }
 
 func (p *UpdateRequest) Bind(r *http.Request) error {
@@ -91,7 +91,7 @@ func (p *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	*order.Order
+	*model.Order
 }
 
 func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
@@ -99,7 +99,7 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type ListResponse struct {
-	Orders []*order.Order `json:"orders"`
+	Orders []*model.Order `json:"orders"`
 }
 
 func (r3 *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
@@ -107,7 +107,7 @@ func (r3 *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type DeleteItemsRequest struct {
-	Items []*order.Item `json:"items"`
+	Items []*model.Item `json:"items"`
 }
 
 func (p *DeleteItemsRequest) Bind(r *http.Request) error {
@@ -132,7 +132,7 @@ func (p *DeleteItemsRequest) Bind(r *http.Request) error {
 }
 
 type UpdateItemRequest struct {
-	*order.Item
+	*model.Item
 }
 
 func (p *UpdateItemRequest) Bind(r *http.Request) error {
@@ -153,7 +153,7 @@ func (p *UpdateItemRequest) Bind(r *http.Request) error {
 }
 
 type ItemResponse struct {
-	*order.Item
+	*model.Item
 }
 
 func (p ItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
@@ -161,7 +161,7 @@ func (p ItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type ListItemResponse struct {
-	Items []*order.Item `json:"items"`
+	Items []*model.Item `json:"items"`
 }
 
 func (p ListItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
@@ -169,7 +169,7 @@ func (p ListItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type PaymentRequest struct {
-	*order.Payment
+	*model.Payment
 }
 
 func (p *PaymentRequest) Bind(r *http.Request) error {

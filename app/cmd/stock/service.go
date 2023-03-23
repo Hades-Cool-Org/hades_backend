@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"hades_backend/app/logging"
-	"hades_backend/app/model/stock"
+	"hades_backend/app/model"
 )
 
 type Service struct {
@@ -17,21 +17,21 @@ func NewService(repository Repository) *Service {
 	}
 }
 
-func (s *Service) GetProduct(ctx context.Context, stockId uint, productId uint) (*stock.ProductData, error) {
+func (s *Service) GetProduct(ctx context.Context, stockId uint, productId uint) (*model.ProductData, error) {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("GettingProduct -> [ stockId: %v, productId: %v ]", stockId, productId))
 
 	return s.repository.GetProduct(ctx, stockId, productId)
 }
 
-func (s *Service) UpdateProduct(ctx context.Context, stockId uint, productId uint, product *stock.ProductData) error {
+func (s *Service) UpdateProduct(ctx context.Context, stockId uint, productId uint, product *model.ProductData) error {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("UpdatingProduct -> [ stockId: %v, productId: %v, product: %v ]", stockId, productId, product))
 
 	return s.repository.UpdateProduct(ctx, stockId, productId, product)
 }
 
-func (s *Service) AddProductToStock(ctx context.Context, stockId uint, products []*stock.ProductData) error {
+func (s *Service) AddProductToStock(ctx context.Context, stockId uint, products []*model.ProductData) error {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("AddingProductToStock -> [ stockId: %v, %v ]", stockId, len(products)))
 
@@ -49,28 +49,28 @@ func (s *Service) RemoveProductFromStock(ctx context.Context, stockId uint, prod
 	return s.repository.RemoveProductFromStock(ctx, stockId, productId)
 }
 
-func (s *Service) CreateStock(ctx context.Context, stock *stock.Stock) (uint, error) {
+func (s *Service) CreateStock(ctx context.Context, stock *model.Stock) (uint, error) {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("CreatingStock -> [ %v ]", stock))
 
 	return s.repository.Create(ctx, stock)
 }
 
-func (s *Service) GetStock(ctx context.Context, stockId uint) (*stock.Stock, error) {
+func (s *Service) GetStock(ctx context.Context, stockId uint) (*model.Stock, error) {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("GettingStock -> [ %v ]", stockId))
 
 	return s.repository.FindByID(ctx, stockId)
 }
 
-func (s *Service) GetStockByStoreId(ctx context.Context, storeId uint) ([]*stock.Stock, error) {
+func (s *Service) GetStockByStoreId(ctx context.Context, storeId uint) ([]*model.Stock, error) {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("GettingStocks -> [ %v ]", storeId))
 
 	return s.repository.FindAllByStoreID(ctx, storeId)
 }
 
-func (s *Service) UpdateStock(ctx context.Context, stock *stock.Stock) error {
+func (s *Service) UpdateStock(ctx context.Context, stock *model.Stock) error {
 	l := logging.FromContext(ctx)
 	l.Info(fmt.Sprintf("UpdatingStock -> [ %v ]", stock))
 
@@ -84,7 +84,7 @@ func (s *Service) DeleteStock(ctx context.Context, stockId uint) error {
 	return s.repository.Delete(ctx, stockId)
 }
 
-func (s *Service) GetAllStocks(ctx context.Context) ([]*stock.Stock, error) {
+func (s *Service) GetAllStocks(ctx context.Context) ([]*model.Stock, error) {
 	l := logging.FromContext(ctx)
 	l.Info("GettingAllStocks")
 

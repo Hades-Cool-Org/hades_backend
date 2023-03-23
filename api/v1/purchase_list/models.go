@@ -2,12 +2,12 @@ package purchase_list
 
 import (
 	"errors"
-	"hades_backend/app/model/purchase_list"
+	"hades_backend/app/model"
 	"net/http"
 )
 
 type Request struct {
-	*purchase_list.PurchaseList
+	*model.PurchaseList
 }
 
 func (r2 *Request) Bind(r *http.Request) error {
@@ -30,11 +30,11 @@ func (r2 *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	*purchase_list.PurchaseList
+	*model.PurchaseList
 }
 
 type GetAllResponse struct {
-	PurchaseLists []*purchase_list.PurchaseList `json:"lists"`
+	PurchaseLists []*model.PurchaseList `json:"lists"`
 }
 
 func (g *Response) Render(w http.ResponseWriter, r *http.Request) error {

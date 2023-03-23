@@ -4,7 +4,7 @@ import (
 	"gorm.io/gorm"
 	"hades_backend/app/cmd/product"
 	"hades_backend/app/cmd/store"
-	"hades_backend/app/model/stock"
+	"hades_backend/app/model"
 )
 
 type Stock struct {
@@ -27,10 +27,10 @@ func (ProductData) TableName() string {
 	return "stock_products"
 }
 
-func NewModel(s *stock.Stock) *Stock {
+func NewModel(s *model.Stock) *Stock {
 	var products []*ProductData
 
-	fnProduct := func(p *stock.ProductData) *ProductData {
+	fnProduct := func(p *model.ProductData) *ProductData {
 
 		if p == nil {
 			return nil
@@ -65,8 +65,8 @@ func NewModel(s *stock.Stock) *Stock {
 	return s2
 }
 
-func (s *Stock) ToDTO() *stock.Stock {
-	var products []*stock.ProductData
+func (s *Stock) ToDTO() *model.Stock {
+	var products []*model.ProductData
 
 	for _, data := range s.Products {
 		products = append(products, data.ToDTO())
@@ -78,7 +78,7 @@ func (s *Stock) ToDTO() *stock.Stock {
 		storeName = s.Store.Name
 	}
 
-	s2 := &stock.Stock{
+	s2 := &model.Stock{
 		ID:           s.ID,
 		StoreId:      s.StoreID,
 		StoreName:    storeName,
@@ -89,8 +89,8 @@ func (s *Stock) ToDTO() *stock.Stock {
 	return s2
 }
 
-func (p *ProductData) ToDTO() *stock.ProductData {
-	p2 := &stock.ProductData{
+func (p *ProductData) ToDTO() *model.ProductData {
+	p2 := &model.ProductData{
 		Current:   p.Current,
 		Suggested: p.Suggested,
 		ProductId: p.ProductID,

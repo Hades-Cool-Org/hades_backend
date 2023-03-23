@@ -6,7 +6,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"hades_backend/app/model/user"
+	"hades_backend/app/model"
 	"regexp"
 	"testing"
 )
@@ -35,7 +35,7 @@ func TestMySqlRepository_Create(t *testing.T) {
 	}
 	m := &MySqlRepository{db: open}
 
-	u := &user.User{
+	u := &model.User{
 		Name:  "John Doe",
 		Email: "john.doe@example.com",
 		Phone: "1234",

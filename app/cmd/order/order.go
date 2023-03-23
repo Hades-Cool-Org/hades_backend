@@ -14,7 +14,7 @@ import (
 	"hades_backend/app/cmd/vendors"
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
-	"hades_backend/app/model/order"
+	"hades_backend/app/model"
 	"net/url"
 	"strconv"
 	"sync"
@@ -52,7 +52,7 @@ type Order struct {
 	ModificationLock sync.Mutex `json:"-" sql:"-" gorm:"-"`
 }
 
-func (o Order) TableName() string {
+func (o *Order) TableName() string {
 	return "orders"
 }
 
@@ -96,7 +96,7 @@ func (o *Order) UpdateTotal() {
 }
 
 // updateItems updates the items of the order - NO ITEMS ARE REMOVED
-func (o *Order) updateItems(newItems []*order.Item) {
+func (o *Order) updateItems(newItems []*model.Item) {
 
 	o.ModificationLock.Lock()
 	defer o.ModificationLock.Unlock()
@@ -142,7 +142,7 @@ func (o *Order) updateItems(newItems []*order.Item) {
 }
 
 // RemoveItems removes given items from the order
-func RemoveItems(ctx context.Context, orderID uint, items []*order.Item) error {
+func RemoveItems(ctx context.Context, orderID uint, items []*model.Item) error {
 
 	db := database.DB.WithContext(ctx)
 	l := logging.FromContext(ctx)
@@ -177,7 +177,7 @@ func RemoveItems(ctx context.Context, orderID uint, items []*order.Item) error {
 
 // UpdateOrder updates an order
 // items are not removed if they are not in the new list
-func UpdateOrder(ctx context.Context, orderID uint, orderParams *order.Order) error {
+func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) error {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
@@ -261,7 +261,7 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *order.Order) er
 
 // CreateOrder creates a new order
 // no payments nor items are added
-func CreateOrder(ctx context.Context, orderParams *order.Order) (*Order, error) {
+func CreateOrder(ctx context.Context, orderParams *model.Order) (*Order, error) {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
@@ -360,7 +360,7 @@ func GetOrders(ctx context.Context, options *GetOrdersOptions) ([]*Order, error)
 	return orders, nil
 }
 
-func AddPayment(ctx context.Context, orderID uint, paymentParams *order.Payment) (*Payment, error) {
+func AddPayment(ctx context.Context, orderID uint, paymentParams *model.Payment) (*Payment, error) {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)

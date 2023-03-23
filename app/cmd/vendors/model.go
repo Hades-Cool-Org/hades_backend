@@ -2,7 +2,7 @@ package vendors
 
 import (
 	"gorm.io/gorm"
-	"hades_backend/app/model/vendors"
+	"hades_backend/app/model"
 )
 
 type Vendor struct {
@@ -22,8 +22,8 @@ type Contact struct {
 	Phone *string `gorm:"type:varchar(255);"`
 }
 
-func (v *Vendor) ToDTO() *vendors.Vendor {
-	return &vendors.Vendor{
+func (v *Vendor) ToDTO() *model.Vendor {
+	return &model.Vendor{
 		ID:       v.ID,
 		Name:     v.Name,
 		Email:    v.Email,
@@ -31,7 +31,7 @@ func (v *Vendor) ToDTO() *vendors.Vendor {
 		Cnpj:     v.Cnpj,
 		Type:     v.Type,
 		Location: v.Location,
-		Contact: &vendors.Contact{
+		Contact: &model.Contact{
 			Name:  v.Contact.Name,
 			Email: v.Contact.Email,
 			Phone: v.Contact.Phone,
@@ -39,7 +39,7 @@ func (v *Vendor) ToDTO() *vendors.Vendor {
 	}
 }
 
-func ToModel(vendor *vendors.Vendor) *Vendor {
+func ToModel(vendor *model.Vendor) *Vendor {
 	v := &Vendor{
 		Name:     vendor.Name,
 		Email:    vendor.Email,

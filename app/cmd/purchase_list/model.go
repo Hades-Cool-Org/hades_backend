@@ -4,9 +4,7 @@ import (
 	"gorm.io/gorm"
 	"hades_backend/app/cmd/product"
 	"hades_backend/app/cmd/user"
-	productModel "hades_backend/app/model/product"
-	"hades_backend/app/model/purchase_list"
-	userModel "hades_backend/app/model/user"
+	productModel "hades_backend/app/model"
 )
 
 type PurchaseList struct {
@@ -16,7 +14,7 @@ type PurchaseList struct {
 	Products []*product.Product `gorm:"many2many:purchase_list_products;"`
 }
 
-func NewModel(p *purchase_list.PurchaseList) *PurchaseList {
+func NewModel(p *productModel.PurchaseList) *PurchaseList {
 	var products []*product.Product
 
 	fnProduct := func(p *productModel.Product) *product.Product {
@@ -34,7 +32,7 @@ func NewModel(p *purchase_list.PurchaseList) *PurchaseList {
 		products = append(products, fnProduct(pdt))
 	}
 
-	fnUser := func(u *userModel.User) *user.User {
+	fnUser := func(u *productModel.User) *user.User {
 		if u == nil || u.ID == 0 {
 			return nil
 		}
@@ -60,11 +58,11 @@ func NewModel(p *purchase_list.PurchaseList) *PurchaseList {
 	return p2
 }
 
-func (p *PurchaseList) ToDTO() *purchase_list.PurchaseList {
+func (p *PurchaseList) ToDTO() *productModel.PurchaseList {
 
 	var products []*productModel.Product
 
-	var u *userModel.User
+	var u *productModel.User
 
 	for _, pp := range p.Products {
 		products = append(products, pp.ToDto())
@@ -74,7 +72,7 @@ func (p *PurchaseList) ToDTO() *purchase_list.PurchaseList {
 		u = p.User.ToDto()
 	}
 
-	p2 := &purchase_list.PurchaseList{
+	p2 := &productModel.PurchaseList{
 		ID:       u.ID,
 		User:     u,
 		Products: products,

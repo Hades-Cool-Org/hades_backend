@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/logging"
-	user2 "hades_backend/app/model/user"
+	user2 "hades_backend/app/model"
 	"time"
 )
 

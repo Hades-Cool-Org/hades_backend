@@ -2,16 +2,16 @@ package stock
 
 import (
 	"errors"
-	"hades_backend/app/model/stock"
+	"hades_backend/app/model"
 	"net/http"
 )
 
 type ProductRequest struct {
-	*stock.ProductData
+	*model.ProductData
 }
 
 type ProductRequestList struct {
-	Products []*stock.ProductData `json:"products"`
+	Products []*model.ProductData `json:"products"`
 }
 
 func (i *ProductRequestList) Bind(r *http.Request) error {
@@ -41,7 +41,7 @@ func (i *ProductRequest) Bind(r *http.Request) error {
 }
 
 type ProductResponse struct {
-	*stock.ProductData
+	*model.ProductData
 }
 
 func (i *ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
@@ -49,7 +49,7 @@ func (i *ProductResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type Request struct {
-	*stock.Stock
+	*model.Stock
 }
 
 func (r2 *Request) Bind(r *http.Request) error {
@@ -63,7 +63,7 @@ func (r2 *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	*stock.Stock
+	*model.Stock
 }
 
 func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {

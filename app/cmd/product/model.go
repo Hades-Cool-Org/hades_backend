@@ -2,7 +2,7 @@ package product
 
 import (
 	"gorm.io/gorm"
-	"hades_backend/app/model/product"
+	"hades_backend/app/model"
 )
 
 type Product struct {
@@ -13,8 +13,8 @@ type Product struct {
 	MeasuringUnit string `gorm:"type:varchar(55)"`
 }
 
-func (p *Product) ToDto() *product.Product {
-	return &product.Product{
+func (p *Product) ToDto() *model.Product {
+	return &model.Product{
 		ID:            p.ID,
 		Name:          p.Name,
 		Details:       p.Details,
@@ -23,7 +23,7 @@ func (p *Product) ToDto() *product.Product {
 	}
 }
 
-func NewModel(product *product.Product) *Product {
+func NewModel(product *model.Product) *Product {
 	p := &Product{
 		Name:          product.Name,
 		Details:       product.Details,

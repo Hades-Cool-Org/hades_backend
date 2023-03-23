@@ -1,4 +1,4 @@
-package store
+package model
 
 import "encoding/json"
 
@@ -17,11 +17,4 @@ func (s *Store) ToLoggableString() string {
 		return "{}"
 	}
 	return string(j)
-}
-
-type User struct {
-	ID    uint   `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"go.uber.org/zap"
 	"hades_backend/app/logging"
-	"hades_backend/app/model/user"
+	"hades_backend/app/model"
 )
 
 type Service struct {
@@ -19,11 +19,11 @@ func NewService(r Repository) *Service {
 	}
 }
 
-func (s *Service) Login(ctx context.Context, email, password string) (*user.Login, error) {
+func (s *Service) Login(ctx context.Context, email, password string) (*model.Login, error) {
 	return s.authService.Login(ctx, email, password)
 }
 
-func (s *Service) CreateUser(ctx context.Context, user *user.User) (uint, error) { //TODO: ROLES as enum
+func (s *Service) CreateUser(ctx context.Context, user *model.User) (uint, error) { //TODO: ROLES as enum
 	logger := logging.FromContext(ctx)
 	logger.Info("creating user", zap.String("email", user.Email))
 
@@ -39,14 +39,14 @@ func (s *Service) CreateUser(ctx context.Context, user *user.User) (uint, error)
 	return id, nil
 }
 
-func (s *Service) UpdateUser(ctx context.Context, userId uint, user *user.User) error { //todo
+func (s *Service) UpdateUser(ctx context.Context, userId uint, user *model.User) error { //todo
 	logger := logging.FromContext(ctx)
 	logger.Info("updating user", zap.String("email", user.Email), zap.Uint("id", userId))
 	user.ID = userId
 	return s.repository.Update(ctx, user)
 }
 
-func (s *Service) GetUser(ctx context.Context, id uint) (*user.User, error) { //todo
+func (s *Service) GetUser(ctx context.Context, id uint) (*model.User, error) { //todo
 	logger := logging.FromContext(ctx)
 	logger.Info("getting user", zap.Uint("id", id))
 

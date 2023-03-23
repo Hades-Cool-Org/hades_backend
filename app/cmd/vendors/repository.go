@@ -5,20 +5,20 @@ import (
 	"errors"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
-	"hades_backend/app/model/vendors"
+	"hades_backend/app/model"
 )
 
 type Repository interface {
 	// Create creates a new vendor
-	Create(ctx context.Context, vendor *vendors.Vendor) (uint, error)
+	Create(ctx context.Context, vendor *model.Vendor) (uint, error)
 	// Update updates an existing vendor
-	Update(ctx context.Context, vendor *vendors.Vendor) error
+	Update(ctx context.Context, vendor *model.Vendor) error
 	// Delete deletes an existing vendor
 	Delete(ctx context.Context, id uint) error
 	// GetByID returns a vendor by id
-	GetByID(ctx context.Context, id uint) (*vendors.Vendor, error)
+	GetByID(ctx context.Context, id uint) (*model.Vendor, error)
 	// GetAll returns all vendors
-	GetAll(ctx context.Context) ([]*vendors.Vendor, error)
+	GetAll(ctx context.Context) ([]*model.Vendor, error)
 }
 
 type MySqlRepository struct {
@@ -36,18 +36,18 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	return &MySqlRepository{db: db}
 }
 
-func (m *MySqlRepository) Create(ctx context.Context, vendor *vendors.Vendor) (uint, error) {
-	model := ToModel(vendor)
+func (m *MySqlRepository) Create(ctx context.Context, vendor *model.Vendor) (uint, error) {
+	mm := ToModel(vendor)
 
-	if err := m.db.Create(model).Error; err != nil {
+	if err := m.db.Create(mm).Error; err != nil {
 		return 0, cmd.ParseMysqlError(ctx, "vendor", err)
 	}
-	return model.ID, nil
+	return mm.ID, nil
 }
 
-func (m *MySqlRepository) Update(ctx context.Context, vendor *vendors.Vendor) error {
-	model := ToModel(vendor)
-	if err := m.db.Updates(model).Error; err != nil {
+func (m *MySqlRepository) Update(ctx context.Context, vendor *model.Vendor) error {
+	mm := ToModel(vendor)
+	if err := m.db.Updates(mm).Error; err != nil {
 		return cmd.ParseMysqlError(ctx, "vendor", err)
 	}
 	return nil
@@ -60,28 +60,28 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*vendors.Vendor, error) {
-	var model Vendor
-	if err := m.db.Where("id = ?", id).First(&model).Error; err != nil {
+func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*model.Vendor, error) {
+	var mm Vendor
+	if err := m.db.Where("id = ?", id).First(&mm).Error; err != nil {
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, cmd.ParseMysqlError(ctx, "vendor", err)
 	}
-	return model.ToDTO(), nil
+	return mm.ToDTO(), nil
 }
 
-func (m *MySqlRepository) GetAll(ctx context.Context) ([]*vendors.Vendor, error) {
+func (m *MySqlRepository) GetAll(ctx context.Context) ([]*model.Vendor, error) {
 	var models []Vendor
 	if err := m.db.Find(&models).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "vendor", err)
 	}
 
-	v := make([]*vendors.Vendor, len(models))
+	v := make([]*model.Vendor, len(models))
 
-	for i, model := range models {
-		v[i] = model.ToDTO()
+	for i, mm := range models {
+		v[i] = mm.ToDTO()
 	}
 
 	return v, nil

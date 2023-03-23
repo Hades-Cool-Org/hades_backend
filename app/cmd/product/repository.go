@@ -4,20 +4,20 @@ import (
 	"context"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
-	"hades_backend/app/model/product"
+	"hades_backend/app/model"
 )
 
 type Repository interface {
 	// Create creates a new product
-	Create(ctx context.Context, product *product.Product) (uint, error)
+	Create(ctx context.Context, product *model.Product) (uint, error)
 	// Update updates an existing product
-	Update(ctx context.Context, product *product.Product) error
+	Update(ctx context.Context, product *model.Product) error
 	// Delete deletes an existing product
 	Delete(ctx context.Context, id uint) error
 	// GetByID returns a product by id
-	GetByID(ctx context.Context, id uint) (*product.Product, error)
+	GetByID(ctx context.Context, id uint) (*model.Product, error)
 	// GetAll returns all products
-	GetAll(ctx context.Context) ([]*product.Product, error)
+	GetAll(ctx context.Context) ([]*model.Product, error)
 }
 
 type MySqlRepository struct {
@@ -35,18 +35,18 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	return &MySqlRepository{db: db}
 }
 
-func (m *MySqlRepository) Create(ctx context.Context, product *product.Product) (uint, error) {
-	model := NewModel(product)
+func (m *MySqlRepository) Create(ctx context.Context, product *model.Product) (uint, error) {
+	mm := NewModel(product)
 
-	if err := m.db.Create(model).Error; err != nil {
+	if err := m.db.Create(mm).Error; err != nil {
 		return 0, cmd.ParseMysqlError(ctx, "product", err)
 	}
-	return model.ID, nil
+	return mm.ID, nil
 }
 
-func (m *MySqlRepository) Update(ctx context.Context, product *product.Product) error {
-	model := NewModel(product)
-	if err := m.db.Updates(model).Error; err != nil {
+func (m *MySqlRepository) Update(ctx context.Context, product *model.Product) error {
+	mm := NewModel(product)
+	if err := m.db.Updates(mm).Error; err != nil {
 		return cmd.ParseMysqlError(ctx, "product", err)
 	}
 	return nil
@@ -59,22 +59,22 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*product.Product, error) {
-	var model Product
-	if err := m.db.First(&model, "id = ?", id).Error; err != nil {
+func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*model.Product, error) {
+	var mm Product
+	if err := m.db.First(&mm, "id = ?", id).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "product", err)
 	}
-	return model.ToDto(), nil
+	return mm.ToDto(), nil
 }
 
-func (m *MySqlRepository) GetAll(ctx context.Context) ([]*product.Product, error) {
+func (m *MySqlRepository) GetAll(ctx context.Context) ([]*model.Product, error) {
 	var models []*Product
 	if err := m.db.Find(&models).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "product", err)
 	}
-	products := make([]*product.Product, len(models))
-	for i, model := range models {
-		products[i] = model.ToDto()
+	products := make([]*model.Product, len(models))
+	for i, mm := range models {
+		products[i] = mm.ToDto()
 	}
 	return products, nil
 }

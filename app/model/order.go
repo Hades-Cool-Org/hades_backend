@@ -1,18 +1,16 @@
-package order
+package model
 
 import (
 	"github.com/shopspring/decimal"
-	"hades_backend/app/model/user"
-	"hades_backend/app/model/vendors"
 )
 
 type Order struct {
 	ID          uint            `json:"id"`
-	Vendor      *vendors.Vendor `json:"vendor"`
+	Vendor      *Vendor         `json:"vendor"`
 	CreatedDate string          `json:"created_date"`
 	State       string          `json:"state"` //"CRIADO,ACEITO,ACEITO_PARCIAL,RECEBIDO,RECEBIDO_PARCIAL",
 	EndDate     *string         `json:"end_date"`
-	User        *user.User      `json:"user"`
+	User        *User           `json:"user"`
 	Total       decimal.Decimal `json:"total"`
 
 	Payments []*Payment `json:"payments"`

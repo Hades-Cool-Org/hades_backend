@@ -3,17 +3,16 @@ package store
 import (
 	"errors"
 	"fmt"
+	"hades_backend/app/model"
 	"net/http"
-
-	"hades_backend/app/model/store"
 )
 
 type Request struct {
-	*store.Store
+	*model.Store
 }
 
 type UpdateCouriersRequest struct {
-	Couriers []*store.User `json:"couriers"`
+	Couriers []*model.User `json:"couriers"`
 }
 
 func (a *UpdateCouriersRequest) Bind(r *http.Request) error {
@@ -55,7 +54,7 @@ func (r2 *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	*store.Store
+	*model.Store
 }
 
 func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
@@ -63,7 +62,7 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type GetAllResponse struct {
-	Stores []*store.Store `json:"stores"`
+	Stores []*model.Store `json:"stores"`
 }
 
 func (g *GetAllResponse) Render(w http.ResponseWriter, r *http.Request) error {

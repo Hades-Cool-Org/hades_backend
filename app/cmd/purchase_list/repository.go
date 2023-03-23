@@ -4,22 +4,22 @@ import (
 	"context"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
-	"hades_backend/app/model/purchase_list"
+	"hades_backend/app/model"
 )
 
 type Repository interface {
 	//Create creates a new purchase list
-	Create(ctx context.Context, purchaseList *purchase_list.PurchaseList) (uint, error)
+	Create(ctx context.Context, purchaseList *model.PurchaseList) (uint, error)
 	//Update updates an existing purchase list
-	Update(ctx context.Context, purchaseList *purchase_list.PurchaseList) error
+	Update(ctx context.Context, purchaseList *model.PurchaseList) error
 	//Delete deletes an existing purchase list
 	Delete(ctx context.Context, id uint) error
 	//GetByID returns a purchase list by id
-	GetByID(ctx context.Context, id uint) (*purchase_list.PurchaseList, error)
+	GetByID(ctx context.Context, id uint) (*model.PurchaseList, error)
 	//GetByUserID returns all purchase lists by user id
-	GetByUserID(ctx context.Context, id uint) ([]*purchase_list.PurchaseList, error)
+	GetByUserID(ctx context.Context, id uint) ([]*model.PurchaseList, error)
 	//GetAll returns all purchase lists
-	GetAll(ctx context.Context) ([]*purchase_list.PurchaseList, error)
+	GetAll(ctx context.Context) ([]*model.PurchaseList, error)
 }
 
 type MySqlRepository struct {
@@ -37,17 +37,17 @@ func NewRepository(db *gorm.DB) Repository {
 	return &MySqlRepository{db: db}
 }
 
-func (m *MySqlRepository) Create(ctx context.Context, purchaseList *purchase_list.PurchaseList) (uint, error) {
+func (m *MySqlRepository) Create(ctx context.Context, purchaseList *model.PurchaseList) (uint, error) {
 
-	model := NewModel(purchaseList)
+	mm := NewModel(purchaseList)
 
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Omit("Items").Create(model).Error; err != nil {
+			if err := tx.Omit("Items").Create(mm).Error; err != nil {
 				return err
 			}
 
-			err := tx.Model(model).Association("Items").Append(model.Products)
+			err := tx.Model(mm).Association("Items").Append(mm.Products)
 			if err != nil {
 				return err
 			}
@@ -59,19 +59,19 @@ func (m *MySqlRepository) Create(ctx context.Context, purchaseList *purchase_lis
 		return 0, err
 	}
 
-	return model.ID, nil
+	return mm.ID, nil
 }
 
-func (m *MySqlRepository) Update(ctx context.Context, purchaseList *purchase_list.PurchaseList) error {
-	model := NewModel(purchaseList)
+func (m *MySqlRepository) Update(ctx context.Context, purchaseList *model.PurchaseList) error {
+	mm := NewModel(purchaseList)
 
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Where("id = ?", model.ID).Omit("Items").Updates(model).Error; err != nil {
+			if err := tx.Where("id = ?", mm.ID).Omit("Items").Updates(mm).Error; err != nil {
 				return err
 			}
 
-			err := tx.Model(model).Association("Items").Replace(model.Products)
+			err := tx.Model(mm).Association("Items").Replace(mm.Products)
 
 			if err != nil {
 				return err
@@ -109,7 +109,7 @@ func (m *MySqlRepository) Delete(ctx context.Context, id uint) error {
 	return err
 }
 
-func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*purchase_list.PurchaseList, error) {
+func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*model.PurchaseList, error) {
 	s := &PurchaseList{}
 	s.ID = id
 
@@ -124,7 +124,7 @@ func (m *MySqlRepository) GetByID(ctx context.Context, id uint) (*purchase_list.
 	return s.ToDTO(), nil
 }
 
-func (m *MySqlRepository) GetByUserID(ctx context.Context, id uint) ([]*purchase_list.PurchaseList, error) {
+func (m *MySqlRepository) GetByUserID(ctx context.Context, id uint) ([]*model.PurchaseList, error) {
 	s := &PurchaseList{}
 	s.UserID = id
 
@@ -137,7 +137,7 @@ func (m *MySqlRepository) GetByUserID(ctx context.Context, id uint) ([]*purchase
 		return nil, err
 	}
 
-	var dtoList []*purchase_list.PurchaseList
+	var dtoList []*model.PurchaseList
 	for _, item := range list {
 		dtoList = append(dtoList, item.ToDTO())
 	}
@@ -145,7 +145,7 @@ func (m *MySqlRepository) GetByUserID(ctx context.Context, id uint) ([]*purchase
 	return dtoList, nil
 }
 
-func (m *MySqlRepository) GetAll(ctx context.Context) ([]*purchase_list.PurchaseList, error) {
+func (m *MySqlRepository) GetAll(ctx context.Context) ([]*model.PurchaseList, error) {
 	var list []*PurchaseList
 	err := cmd.ParseMysqlError(ctx, "purchase_list",
 		m.db.Preload("Items").Find(&list).Error,
@@ -155,7 +155,7 @@ func (m *MySqlRepository) GetAll(ctx context.Context) ([]*purchase_list.Purchase
 		return nil, err
 	}
 
-	var dtoList []*purchase_list.PurchaseList
+	var dtoList []*model.PurchaseList
 	for _, item := range list {
 		dtoList = append(dtoList, item.ToDTO())
 	}

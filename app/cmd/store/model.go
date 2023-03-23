@@ -3,7 +3,7 @@ package store
 import (
 	"gorm.io/gorm"
 	"hades_backend/app/cmd/user"
-	"hades_backend/app/model/store"
+	"hades_backend/app/model"
 )
 
 type Store struct {
@@ -15,10 +15,10 @@ type Store struct {
 	User     *user.User
 }
 
-func NewModel(s *store.Store) *Store {
+func NewModel(s *model.Store) *Store {
 	var couriers []*user.User
 
-	fnUser := func(u *store.User) *user.User {
+	fnUser := func(u *model.User) *user.User {
 		if u == nil || u.ID == 0 {
 			return nil
 		}
@@ -52,11 +52,11 @@ func NewModel(s *store.Store) *Store {
 	return s2
 }
 
-func (s *Store) ToDTO() *store.Store {
+func (s *Store) ToDTO() *model.Store {
 
-	var couriers []*store.User
+	var couriers []*model.User
 
-	var u *store.User
+	var u *model.User
 
 	for _, courier := range s.Couriers {
 		couriers = append(couriers, toStoreUser(courier))
@@ -66,7 +66,7 @@ func (s *Store) ToDTO() *store.Store {
 		u = toStoreUser(s.User)
 	}
 
-	return &store.Store{
+	return &model.Store{
 		ID:       s.ID,
 		Name:     s.Name,
 		Address:  s.Address,
@@ -74,11 +74,11 @@ func (s *Store) ToDTO() *store.Store {
 		Couriers: couriers,
 	}
 }
-func toStoreUser(u *user.User) *store.User {
+func toStoreUser(u *user.User) *model.User {
 	if u == nil {
 		return nil
 	}
-	return &store.User{
+	return &model.User{
 		ID:    u.ID,
 		Name:  u.Name,
 		Email: u.Email,

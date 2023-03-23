@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	stockModel "hades_backend/app/cmd/stock"
-	"hades_backend/app/model/stock"
+	"hades_backend/app/model"
 	"net/http"
 	"strconv"
 	"time"
@@ -93,7 +93,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
-	s := &stock.Stock{
+	s := &model.Stock{
 		ID:           createdStockId,
 		StoreId:      data.StoreId,
 		StoreName:    data.StoreName,
@@ -204,7 +204,7 @@ func (u *Router) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
-	p := &stock.ProductData{
+	p := &model.ProductData{
 		ProductId:   data.ProductData.ProductId,
 		ProductName: data.ProductData.ProductName,
 		Current:     data.ProductData.Current,

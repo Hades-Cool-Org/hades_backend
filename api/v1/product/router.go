@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/product"
-	productModel "hades_backend/app/model/product"
+	productModel "hades_backend/app/model"
 	"net/http"
 	"strconv"
 )

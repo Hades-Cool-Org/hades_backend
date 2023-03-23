@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
 	purchaseListModel "hades_backend/app/cmd/purchase_list"
-	"hades_backend/app/model/purchase_list"
+	"hades_backend/app/model"
 	"net/http"
 	"strconv"
 )
@@ -116,7 +116,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	list := &purchase_list.PurchaseList{ID: id}
+	list := &model.PurchaseList{ID: id}
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, &Response{list})

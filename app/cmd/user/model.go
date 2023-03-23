@@ -3,7 +3,7 @@ package user
 import (
 	"database/sql"
 	"gorm.io/gorm"
-	"hades_backend/app/model/user"
+	"hades_backend/app/model"
 )
 
 type User struct {
@@ -16,15 +16,15 @@ type User struct {
 	Roles      []*Role      `gorm:"many2many:user_roles;"`
 }
 
-func (u *User) ToDto() *user.User {
+func (u *User) ToDto() *model.User {
 
-	var roles []*user.Role
+	var roles []*model.Role
 
 	for _, role := range u.Roles {
-		roles = append(roles, &user.Role{Name: role.Name})
+		roles = append(roles, &model.Role{Name: role.Name})
 	}
 
-	return &user.User{
+	return &model.User{
 		ID:         u.ID,
 		Name:       u.Name,
 		Email:      u.Email,
@@ -40,7 +40,7 @@ type Role struct {
 	Name string `gorm:"type:varchar(255);primary_key;"`
 }
 
-func NewModel(user *user.User) *User {
+func NewModel(user *model.User) *User {
 
 	var roles []*Role
 

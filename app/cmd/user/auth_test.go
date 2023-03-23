@@ -2,19 +2,19 @@ package user
 
 import (
 	"context"
-	"hades_backend/app/model/user"
+	"hades_backend/app/model"
 	"testing"
 )
 
 func TestAuthService_Login(t *testing.T) {
 	repo := &MockRepository{
-		Users: map[uint]*user.User{
+		Users: map[uint]*model.User{
 			1: {
 				ID:       1,
 				Name:     "Test User",
 				Email:    "test@example.com",
 				Password: "cGFzc3dvcmQ=",
-				Roles: []*user.Role{
+				Roles: []*model.Role{
 					{Name: "user"},
 				},
 			},

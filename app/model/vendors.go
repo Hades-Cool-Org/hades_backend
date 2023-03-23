@@ -1,4 +1,4 @@
-package vendors
+package model
 
 type Vendor struct {
 	ID       uint     `json:"id"`

@@ -1,4 +1,4 @@
-package stock
+package model
 
 type Stock struct { //NO UUID, WILL BE A SELECT ALL QUERY
 	ID           uint           `json:"id"`
