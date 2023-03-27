@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -18,7 +19,6 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type Order struct {
@@ -36,7 +36,7 @@ type Order struct {
 	Payments []*Payment
 	Items    []*Item
 
-	CompletedDate *time.Time //TODO: mudança de estado setar isso
+	CompletedDate sql.NullTime //TODO: mudança de estado setar isso
 
 	ModificationLock sync.Mutex `json:"-" sql:"-" gorm:"-"`
 }

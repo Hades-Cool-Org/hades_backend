@@ -8,6 +8,7 @@ DB Date type
 - https://www.digitalocean.com/community/tutorials/how-to-use-dates-and-times-in-go
 - https://stackoverflow.com/questions/3799193/mysql-data-best-way-to-implement-paging
 - https://popsql.com/learn-sql/mysql/how-to-query-date-and-time-in-mysql
+  https://github.com/go-sql-driver/mysql/issues/1181
 
 GORM
 

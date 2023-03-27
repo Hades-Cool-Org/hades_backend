@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
@@ -11,7 +12,6 @@ import (
 	"hades_backend/app/cmd/order"
 	"hades_backend/app/cmd/product"
 	"hades_backend/app/cmd/store"
-	"hades_backend/app/cmd/user"
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
 	"hades_backend/app/model"
@@ -24,7 +24,7 @@ type Delivery struct {
 	gorm.Model
 	State string //ABERTO,COLETADO,ENTREGUE
 
-	EndDate *time.Time `gorm:"index"`
+	EndDate sql.NullTime `gorm:"index"`
 
 	SessionID uint
 	Session   *Session
@@ -67,32 +67,6 @@ type Item struct {
 	Store   *store.Store
 
 	Quantity float64
-}
-
-type Vehicle struct {
-	gorm.Model
-	Name string
-	Type string
-}
-
-func (v Vehicle) TableName() string {
-	return "vehicles"
-}
-
-type Session struct {
-	gorm.Model
-
-	UserID uint       `gorm:"index"`
-	User   *user.User //motorista
-
-	VehicleID uint `gorm:"index"`
-	Vehicle   *Vehicle
-
-	EndDate *time.Time `gorm:"index"`
-}
-
-func (s Session) TableName() string {
-	return "delivery_sessions"
 }
 
 // CreateDelivery creates a new delivery
@@ -218,7 +192,8 @@ func UpdateDelivery(ctx context.Context, deliveryID uint, deliveryParam *model.D
 			return nil, net.NewHadesError(ctx, err, http.StatusBadRequest)
 		}
 
-		existingDelivery.EndDate = &parse
+		existingDelivery.EndDate.Time = parse
+		existingDelivery.EndDate.Valid = true
 	}
 
 	if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(existingDelivery).Error; err != nil {
@@ -282,7 +257,7 @@ func GetDeliveries(ctx context.Context, opts *GetDeliveryOptions) ([]*Delivery, 
 	var deliveries []*Delivery
 
 	query := deliveryQuery(db)
-	query = opts.parseOrderParams(query)
+	query = opts.parseDeliveryParams(query)
 
 	if err := query.Find(&deliveries).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "delivery", err)
@@ -374,7 +349,7 @@ type GetDeliveryOptions struct {
 	Params url.Values
 }
 
-func (o *GetDeliveryOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
+func (o *GetDeliveryOptions) parseDeliveryParams(query *gorm.DB) *gorm.DB {
 
 	tableName := (&Delivery{}).TableName()
 
@@ -383,11 +358,15 @@ func (o *GetDeliveryOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
 	}
 
 	if s := o.Params.Get("user_id"); s != "" {
-		query = query.Where(tableName+".session.user_id = ?", s)
+		query = query.
+			Joins("INNER JOIN sessions ON sessions.id = deliveries.session_id").
+			Where("sessions.user_id = ?", s)
 	}
 
 	if s := o.Params.Get("vehicle_id"); s != "" {
-		query = query.Where(tableName+".session.vehicle_id = ?", s)
+		query = query.
+			Joins("INNER JOIN sessions ON sessions.id = deliveries.session_id").
+			Where("sessions.vehicle_id = ?", s)
 	}
 
 	if s := o.Params.Get("order_id"); s != "" {

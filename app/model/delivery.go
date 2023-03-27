@@ -49,5 +49,5 @@ type Session struct {
 	User      *User    `json:"user"` //motorista
 	Vehicle   *Vehicle `json:"vehicle"`
 	StartDate string   `json:"start_date"`
-	EndDate   *string  `json:"end_date"`
+	EndDate   *string  `json:"end_date,omitempty"`
 }
