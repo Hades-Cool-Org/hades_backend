@@ -89,6 +89,8 @@ func convertOrderToResponse(o *order2.Order) *model.Order {
 
 	is := convertOrderItems(o.Items)
 
+	s, _ := model.OrderStateFromString(o.State)
+
 	z := &model.Order{
 		ID: o.ID,
 		Vendor: &model.Vendor{
@@ -106,7 +108,7 @@ func convertOrderToResponse(o *order2.Order) *model.Order {
 			},
 		},
 		CreatedDate: o.CreatedAt.Format(time.RFC3339),
-		State:       o.State,
+		State:       &s,
 		EndDate: func() *string {
 			if o.CompletedDate != nil {
 				o.CompletedDate.Format(time.RFC3339)

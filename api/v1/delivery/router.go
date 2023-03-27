@@ -22,16 +22,22 @@ const dateStartParam = "date_start"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
-		r.Post("/", u.Create)                                      // assignar um pedido a um entrador
-		r.Get("/", u.GetCustom)                                    // assignar um pedido a um entrador
-		r.Delete("/{delivery_id}", u.Delete)                       // mudar o estado do pedido para coletado
-		r.Get("/{delivery_id}", u.Get)                             // mudar o estado do pedido para coletado
-		r.Post("/{delivery_id}/complete", u.Complete)              // recebimento do pedido pelo gerente da loja
-		r.Post("/{delivery_id}/user/{user_id}/collect", u.Collect) // mudar o estado do pedido para coletado
+		r.Post("/", u.Create)                // assignar um pedido a um entrador
+		r.Get("/", u.GetAll)                 // assignar um pedido a um entrador
+		r.Delete("/{delivery_id}", u.Delete) // mudar o estado do pedido para coletado
+		r.Get("/{delivery_id}", u.Get)       // mudar o estado do pedido para coletado
+		r.Put("/{delivery_id}", u.Update)    // mudar o estado do pedido para coletado
 
-		r.Post("/user/{user_id}/start", u.StartDelivery) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery
-		r.Post("/user/{user_id}/end", u.EndDelivery)     //end user turn
-		r.Get("/user/{user_id}", u.GetByUser)            //get all deliveries by user
+		r.Post("/turn", u.CreateUserTurn)
+		r.Get("/turn", u.GetAllTurns)
+		r.Put("/turn/{turn_id}", u.UpdateUserTurn)
+		r.Delete("/turn/{turn_id}", u.DeleteUserTurn)
+		r.Get("/turn/{turn_id}", u.GetUserTurn)
+
+		r.Post("/vehicles", u.CreateVehicle)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Get("/vehicles", u.GetAllVehicles)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Get("/vehicles/{vehicle_id}", u.GetVehicle)        //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Delete("/vehicles/{vehicle_id}", u.DeleteVehicles) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
 	}
 }
 
@@ -80,7 +86,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &Response{deliveries})
 }
 
-func (u *Router) GetCustom(w http.ResponseWriter, r *http.Request) {
+func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	deliveryId := chi.URLParam(r, deliveryIdParam)
 

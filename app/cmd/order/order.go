@@ -21,24 +21,13 @@ import (
 	"time"
 )
 
-type Status string
-
-const (
-	Created           Status = "CRIADO"
-	Accepted          Status = "ACEITO"
-	AcceptedPartially Status = "ACEITO_PARCIAL"
-	Received          Status = "RECEBIDO"
-	ReceivedPartially Status = "RECEBIDO_PARCIAL"
-	Completed         Status = "COMPLETADO"
-)
-
 type Order struct {
 	gorm.Model
 
-	VendorID uint
+	VendorID uint `gorm:"index"`
 	Vendor   *vendors.Vendor
 
-	UserID uint
+	UserID uint `gorm:"index"`
 	User   *user.User
 
 	State string
@@ -86,8 +75,22 @@ func (o *Order) CalculatedTotal() *Prices {
 }
 
 func (o *Order) BeforeCreate(tx *gorm.DB) (err error) {
-	o.State = string(Created)
+	o.State = string(model.Created)
 	o.Total = o.CalculatedTotal().Total
+	return nil
+}
+
+func (o *Order) BeforeDelete(tx *gorm.DB) error {
+
+	delModels := map[string]interface{}{
+		"items":    &[]Item{},
+		"payments": &[]Payment{},
+	}
+	for name, dm := range delModels {
+		if result := tx.Delete(dm, "order_id = ?", o.ID); result.Error != nil {
+			return errors.Wrap(result.Error, fmt.Sprintf("Error deleting %s records", name))
+		}
+	}
 	return nil
 }
 
@@ -242,6 +245,10 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 		//}
 		prices := existingOrder.CalculatedTotal()
 		existingOrder.Total = prices.Total
+	}
+
+	if orderParams.State != nil {
+		existingOrder.State = string(*orderParams.State)
 	}
 
 	if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(existingOrder).Error; err != nil {
@@ -427,26 +434,12 @@ func DeleteOrder(ctx context.Context, orderID uint) error {
 	return nil
 }
 
-func (o *Order) BeforeDelete(tx *gorm.DB) error {
-
-	delModels := map[string]interface{}{
-		"items":    &[]Item{},
-		"payments": &[]Payment{},
-	}
-	for name, dm := range delModels {
-		if result := tx.Delete(dm, "order_id = ?", o.ID); result.Error != nil {
-			return errors.Wrap(result.Error, fmt.Sprintf("Error deleting %s records", name))
-		}
-	}
-	return nil
-}
-
 func (o *GetOrdersOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
 
 	tableName := (&Order{}).TableName()
 
-	if s := o.Params.Get("status"); s != "" {
-		query = query.Where(tableName+".status = ?", s)
+	if s := o.Params.Get("state"); s != "" {
+		query = query.Where(tableName+".state = ?", s)
 	}
 
 	if s := o.Params.Get("vendor_id"); s != "" {
