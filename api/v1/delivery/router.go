@@ -1,12 +1,7 @@
 package delivery
 
 import (
-	"errors"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
-	"hades_backend/api/utils/net"
-	"net/http"
-	"time"
 )
 
 type Router struct {
@@ -29,11 +24,14 @@ func (u *Router) Router() func(r chi.Router) {
 		r.Put("/{delivery_id}", u.Update)
 		r.Delete("/{delivery_id}/items", u.RemoveItems)
 
-		r.Post("/turn", u.CreateUserTurn)
-		r.Get("/turn", u.GetAllTurns)
-		r.Post("/turn/{turn_id}/end", u.EndUserTurn)
-		r.Delete("/turn/{turn_id}", u.DeleteUserTurn)
-		r.Get("/turn/{turn_id}", u.GetUserTurn)
+		// gerente na loja conferindo pedido// TODO MELHOR NOME?
+		r.Post("/{delivery_id}/conference", u.KKKK)
+
+		r.Post("/session", u.CreateUserTurn)
+		r.Get("/session", u.GetAllTurns)
+		r.Post("/session/{session_id}/end", u.EndUserTurn)
+		r.Delete("/session/{session_id}", u.DeleteUserTurn)
+		r.Get("/session/{session_id}", u.GetUserTurn)
 
 		r.Post("/vehicles", u.CreateVehicle)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
 		r.Get("/vehicles", u.GetAllVehicles)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")

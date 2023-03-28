@@ -2,37 +2,39 @@ package delivery
 
 import (
 	"errors"
+	"hades_backend/app/model"
 	"net/http"
 )
 
 type Request struct {
-	*Delivery
+	*model.Delivery
 }
 
 type CompleteDeliveryRequest struct {
-	ID       string     `json:"id"`
-	Products []*Product `json:"products"`
+	DeliveryItems []*model.DeliveryItem `json:"items"`
 }
 
 func (r2 *CompleteDeliveryRequest) Bind(r *http.Request) error {
 
-	if len(r2.Products) == 0 {
+	if len(r2.DeliveryItems) == 0 {
 		return errors.New("products cannot be empty")
 	}
 
-	for _, product := range r2.Products {
+	for _, product := range r2.DeliveryItems {
 
-		if product.ID == "" {
-			return errors.New("product.UUID cannot be empty")
+		if product.ProductID == 0 {
+			return errors.New("product cannot be empty")
 		}
 
-		//todo deveria validar quantidade?
+		if product.Quantity == 0 {
+			return errors.New("quantity cannot be empty")
+		}
 	}
 	return nil
 }
 
 type Response struct {
-	*Delivery
+	*model.Delivery
 }
 
 type CompleteDeliveryResponse struct {
@@ -49,31 +51,55 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 
 func (r2 *Request) Bind(r *http.Request) error {
 
-	if r2.Vehicle.ID == "" {
-		errors.New("vehicle UUID cannot be empty")
+	if r2.Session.ID == 0 {
+		return errors.New("session ID cannot be empty")
 	}
 
-	if r2.Order.ID == "" {
-		errors.New("order UUID cannot be empty")
+	if r2.Order.ID == 0 {
+		return errors.New("order UUID cannot be empty")
 	}
 
-	if r2.User.ID == "" {
-		errors.New("user UUID cannot be empty")
+	if len(r2.DeliveryItems) == 0 {
+		return errors.New("products cannot be empty")
+	}
+
+	for _, product := range r2.DeliveryItems {
+
+		if product.ProductID == 0 {
+			return errors.New("product cannot be empty")
+		}
+
+		if product.Quantity == 0 {
+			return errors.New("quantity cannot be empty")
+		}
+
+		if product.StoreID == 0 {
+			return errors.New("storeid cannot be empty")
+		}
 	}
 
 	return nil
 }
 
-func (r2 *StartDeliveryRequest) Bind(r *http.Request) error {
+type SessionRequest struct {
+	*model.Session
+}
 
-	if r2.CourierID == "" {
+func (r2 *SessionRequest) Bind(r *http.Request) error {
+
+	if r2.User.ID == 0 {
 		return errors.New("courier_id cannot be empty")
 	}
+
+	if r2.Vehicle.ID == 0 {
+		return errors.New("vehicle_id cannot be empty")
+	}
+
 	return nil
 }
 
 type ListResponse struct {
-	Deliveries []*Delivery `json:"deliveries"`
+	Deliveries []*model.Delivery `json:"deliveries"`
 }
 
 func (l *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {

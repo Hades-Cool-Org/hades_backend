@@ -3,8 +3,8 @@ package delivery
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"hades_backend/app/cmd"
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
 	"hades_backend/app/model"
@@ -31,7 +31,7 @@ func CreateVehicle(ctx context.Context, vehicleParam *model.Vehicle) (*Vehicle, 
 	v.Type = vehicleParam.Type
 
 	if err := db.Create(v).Error; err != nil {
-		return nil, errors.Wrap(err, "Error creating vehicle")
+		return nil, cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	return v, nil
@@ -46,7 +46,7 @@ func GetVehicle(ctx context.Context, id uint) (*Vehicle, error) {
 	v := new(Vehicle)
 
 	if err := db.First(v, id).Error; err != nil {
-		return nil, errors.Wrap(err, "Error getting vehicle")
+		return nil, cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	return v, nil
@@ -61,14 +61,14 @@ func UpdateVehicle(ctx context.Context, id uint, vehicleParam *model.Vehicle) (*
 	v := new(Vehicle)
 
 	if err := db.First(v, id).Error; err != nil {
-		return nil, errors.Wrap(err, "Error getting vehicle")
+		return nil, cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	v.Name = vehicleParam.Name
 	v.Type = vehicleParam.Type
 
 	if err := db.Save(v).Error; err != nil {
-		return nil, errors.Wrap(err, "Error updating vehicle")
+		return nil, cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	return v, nil
@@ -83,11 +83,11 @@ func DeleteVehicle(ctx context.Context, id uint) error {
 	v := new(Vehicle)
 
 	if err := db.First(v, id).Error; err != nil {
-		return errors.Wrap(err, "Error getting vehicle")
+		return cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	if err := db.Delete(v).Error; err != nil {
-		return errors.Wrap(err, "Error deleting vehicle")
+		return cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func GetAllVehicles(ctx context.Context) ([]*Vehicle, error) {
 	v := make([]*Vehicle, 0)
 
 	if err := db.Find(&v).Error; err != nil {
-		return nil, errors.Wrap(err, "Error listing vehicles")
+		return nil, cmd.ParseMysqlError(ctx, "vehicle", err)
 	}
 
 	return v, nil
