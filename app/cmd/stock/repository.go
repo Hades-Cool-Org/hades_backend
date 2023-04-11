@@ -90,7 +90,7 @@ func (m *MySQLRepository) UpdateProduct(ctx context.Context, stockId uint, produ
 			}
 
 			err = m.db.Model(&stockResult).
-				Association("Items").
+				Association("Products").
 				Replace(&ProductData{ProductID: productId, StockID: stockId, Current: product.Current, Suggested: product.Suggested})
 
 			if err != nil {
@@ -113,7 +113,7 @@ func (m *MySQLRepository) RemoveProductFromStock(ctx context.Context, stockId ui
 				return err
 			}
 
-			err = m.db.Model(&stockResult).Association("Items").Delete(&ProductData{ProductID: productId, StockID: stockId})
+			err = m.db.Model(&stockResult).Association("Products").Delete(&ProductData{ProductID: productId, StockID: stockId})
 
 			if err != nil {
 				return err
@@ -129,11 +129,11 @@ func (m *MySQLRepository) Create(ctx context.Context, stock *model.Stock) (uint,
 
 	err := cmd.ParseMysqlError(ctx, "stock",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Omit("Items").Create(md).Error; err != nil {
+			if err := tx.Omit("Products").Create(md).Error; err != nil {
 				return err
 			}
 
-			//err := tx.Model(md).Association("Items").Append(md.Items)
+			//err := tx.Model(md).Association("Products").Append(md.Products)
 			//if err != nil {
 			//	return err
 			//}
@@ -159,7 +159,7 @@ func (m *MySQLRepository) AddProductToStock(ctx context.Context, stockId uint, p
 				return err
 			}
 
-			err = m.db.Model(&stockResult).Association("Items").Append(products)
+			err = m.db.Model(&stockResult).Association("Products").Append(products)
 
 			if err != nil {
 				return err
@@ -175,9 +175,8 @@ func (m *MySQLRepository) FindAllByStoreID(ctx context.Context, storeId uint) ([
 
 	err := cmd.ParseMysqlError(ctx, "stock",
 		m.db.Where("store_id = ?", storeId).
-			Preload("Items").
+			Preload("Products").
 			Preload("Store").
-			Preload("Items.Product").
 			Find(&models).Error,
 	)
 
@@ -219,7 +218,7 @@ func (m *MySQLRepository) FindByID(ctx context.Context, id uint) (*model.Stock, 
 	var model Stock
 
 	err := cmd.ParseMysqlError(ctx, "stock",
-		m.db.Preload("Items").Preload("Store").Preload("Items.Product").First(&model, id).Error,
+		m.db.Preload("Products").Preload("Store").First(&model, id).Error,
 	)
 
 	if err != nil {
@@ -236,11 +235,11 @@ func (m *MySQLRepository) Update(ctx context.Context, stock *model.Stock) error 
 	return cmd.ParseMysqlError(ctx, "stock",
 		m.db.Transaction(func(tx *gorm.DB) error {
 
-			if err := tx.Omit("Items").Save(model).Error; err != nil {
+			if err := tx.Omit("Products").Save(model).Error; err != nil {
 				return err
 			}
 
-			//err := tx.Model(model).Association("Items").Replace(model.Items)
+			//err := tx.Model(model).Association("Products").Replace(model.Products)
 			//if err != nil {
 			//	return err
 			//}
@@ -255,7 +254,7 @@ func (m *MySQLRepository) Delete(ctx context.Context, id uint) error {
 	s.ID = id
 
 	err := cmd.ParseMysqlError(ctx, "stock",
-		m.db.Select("Items").Delete(&s).Error,
+		m.db.Select("Products").Delete(&s).Error,
 	)
 
 	return err

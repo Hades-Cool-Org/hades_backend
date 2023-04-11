@@ -98,6 +98,14 @@ func (r2 *SessionRequest) Bind(r *http.Request) error {
 	return nil
 }
 
+type SessionResponse struct {
+	*model.Session
+}
+
+func (l *SessionResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 type ListResponse struct {
 	Deliveries []*model.Delivery `json:"deliveries"`
 }

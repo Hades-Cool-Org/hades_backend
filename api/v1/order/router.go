@@ -108,12 +108,12 @@ func convertOrderToResponse(o *order2.Order) *model.Order {
 			},
 		},
 		CreatedDate: o.CreatedAt.Format(time.RFC3339),
-		State:       &s,
-		EndDate: func() *string {
+		State:       s,
+		EndDate: func() string {
 			if o.CompletedDate.Valid {
 				o.CompletedDate.Time.Format(time.RFC3339)
 			}
-			return nil
+			return ""
 		}(),
 		User: &model.User{
 			ID:    o.User.ID,

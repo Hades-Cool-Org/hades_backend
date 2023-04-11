@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 type DeliveryState string
 
 const (
@@ -16,11 +18,18 @@ var (
 	}
 )
 
+func DeliveryStateFromString(s string) (DeliveryState, error) {
+	if state, ok := mappingDeliveryState[s]; ok {
+		return state, nil
+	}
+	return "", fmt.Errorf("invalid  state: %s", s)
+}
+
 type Delivery struct {
 	ID        uint           `json:"id"`
 	State     *DeliveryState `json:"state"` //ABERTO,COLETADO,ENTREGUE
 	StartDate string         `json:"start_date"`
-	EndDate   *string        `json:"end_date"`
+	EndDate   string         `json:"end_date,omitempty"`
 
 	Order   *Order   `json:"order"`
 	Session *Session `json:"session"`
@@ -49,5 +58,5 @@ type Session struct {
 	User      *User    `json:"user"` //motorista
 	Vehicle   *Vehicle `json:"vehicle"`
 	StartDate string   `json:"start_date"`
-	EndDate   *string  `json:"end_date,omitempty"`
+	EndDate   string   `json:"end_date,omitempty"`
 }

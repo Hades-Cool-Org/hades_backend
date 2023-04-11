@@ -185,8 +185,8 @@ func UpdateDelivery(ctx context.Context, deliveryID uint, deliveryParam *model.D
 		existingDelivery.State = string(*deliveryParam.State)
 	}
 
-	if deliveryParam.EndDate != nil {
-		parse, err := time.Parse(time.RFC3339, *deliveryParam.EndDate)
+	if deliveryParam.EndDate != "" {
+		parse, err := time.Parse(time.RFC3339, deliveryParam.EndDate)
 
 		if err != nil {
 			return nil, net.NewHadesError(ctx, err, http.StatusBadRequest)

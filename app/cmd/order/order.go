@@ -247,9 +247,7 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 		existingOrder.Total = prices.Total
 	}
 
-	if orderParams.State != nil {
-		existingOrder.State = string(*orderParams.State)
-	}
+	existingOrder.State = string(orderParams.State)
 
 	if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(existingOrder).Error; err != nil {
 		tx.Rollback()
@@ -298,6 +296,8 @@ func CreateOrder(ctx context.Context, orderParams *model.Order) (*Order, error) 
 		}
 		o.Vendor = v
 	}
+
+	o.State = string(model.Created)
 
 	if err := db.Omit("Items").Omit("Payments").Create(o).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "order", err)
@@ -490,7 +490,7 @@ func (i *Item) CalculateTotal() decimal.Decimal {
 }
 
 func (i Item) TableName() string {
-	return "items"
+	return "order_items"
 }
 
 func orderQuery(db *gorm.DB) *gorm.DB {

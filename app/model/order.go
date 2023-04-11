@@ -38,8 +38,8 @@ type Order struct {
 	ID          uint            `json:"id"`
 	Vendor      *Vendor         `json:"vendor"`
 	CreatedDate string          `json:"created_date"`
-	State       *OrderState     `json:"state"` //"CRIADO,ACEITO,ACEITO_PARCIAL,RECEBIDO,RECEBIDO_PARCIAL",
-	EndDate     *string         `json:"end_date"`
+	State       OrderState      `json:"state"` //"CRIADO,ACEITO,ACEITO_PARCIAL,RECEBIDO,RECEBIDO_PARCIAL",
+	EndDate     string          `json:"end_date,omitempty"`
 	User        *User           `json:"user"`
 	Total       decimal.Decimal `json:"total,omitempty"`
 
