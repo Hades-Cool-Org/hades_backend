@@ -150,8 +150,6 @@ func convertOrderItems(z []*order2.Item) []*model.Item {
 
 func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	chi.URLParam(r, stateParam)
-
 	o := &order2.GetOrdersOptions{
 		Params: r.URL.Query(),
 	}

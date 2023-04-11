@@ -10,11 +10,11 @@ type Request struct {
 	*model.Delivery
 }
 
-type CompleteDeliveryRequest struct {
+type ItemRequest struct {
 	DeliveryItems []*model.DeliveryItem `json:"items"`
 }
 
-func (r2 *CompleteDeliveryRequest) Bind(r *http.Request) error {
+func (r2 *ItemRequest) Bind(r *http.Request) error {
 
 	if len(r2.DeliveryItems) == 0 {
 		return errors.New("products cannot be empty")
@@ -38,7 +38,7 @@ type Response struct {
 }
 
 type CompleteDeliveryResponse struct {
-	*CompleteDeliveryRequest
+	*ItemRequest
 }
 
 func (c *CompleteDeliveryResponse) Render(w http.ResponseWriter, r *http.Request) error {

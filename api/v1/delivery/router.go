@@ -1,14 +1,15 @@
 package delivery
 
 import (
+	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/shopspring/decimal"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/delivery"
-	"hades_backend/app/cmd/order"
 	"hades_backend/app/model"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -64,7 +65,148 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	render.Render(w, r, convertDeliveryToResponse(d))
+	render.Render(w, r, &Response{convertDeliveryToResponse(d)})
+}
+
+func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
+	opts := &delivery.GetDeliveryOptions{
+		Params: r.URL.Query(),
+	}
+
+	deliveries, err := delivery.GetDeliveries(r.Context(), opts)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &ListResponse{convertMultipleDeliveriesToResponse(deliveries)})
+}
+
+func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
+	deliveryId := chi.URLParam(r, deliveryIdParam)
+
+	if deliveryId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is empty")))
+		return
+	}
+
+	deliveryIdInt, err := strconv.Atoi(deliveryId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is not a number: "+err.Error())))
+		return
+	}
+
+	err = delivery.DeleteDelivery(r.Context(), uint(deliveryIdInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusNoContent)
+	render.Render(w, r, net.NoContent())
+}
+
+func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
+	deliveryId := chi.URLParam(r, deliveryIdParam)
+
+	if deliveryId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is empty")))
+		return
+	}
+
+	deliveryIdInt, err := strconv.Atoi(deliveryId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is not a number: "+err.Error())))
+		return
+	}
+
+	d, err := delivery.GetDelivery(r.Context(), uint(deliveryIdInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &Response{convertDeliveryToResponse(d)})
+}
+
+func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
+	deliveryId := chi.URLParam(r, deliveryIdParam)
+
+	if deliveryId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is empty")))
+		return
+	}
+
+	deliveryIdInt, err := strconv.Atoi(deliveryId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is not a number: "+err.Error())))
+		return
+	}
+
+	var request Request
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	d, err := delivery.UpdateDelivery(r.Context(), uint(deliveryIdInt), request.Delivery)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &Response{convertDeliveryToResponse(d)})
+}
+
+func (u *Router) RemoveItems(w http.ResponseWriter, r *http.Request) {
+	deliveryId := chi.URLParam(r, deliveryIdParam)
+
+	if deliveryId == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is empty")))
+		return
+	}
+
+	deliveryIdInt, err := strconv.Atoi(deliveryId)
+
+	if err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("deliveryId is not a number: "+err.Error())))
+		return
+	}
+
+	var request ItemRequest
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	err = delivery.RemoveDeliveryItems(r.Context(), uint(deliveryIdInt), request.DeliveryItems)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+}
+
+func convertMultipleDeliveriesToResponse(deliveries []*delivery.Delivery) []*model.Delivery {
+	var responses []*model.Delivery
+	for _, d := range deliveries {
+		responses = append(responses, convertDeliveryToResponse(d))
+	}
+	return responses
 }
 
 func convertSessionToResponse(s *delivery.Session) *model.Session {
@@ -103,7 +245,7 @@ func convertItemsToResponse(items []*delivery.Item) []*model.DeliveryItem {
 	return deliveryItems
 }
 
-func convertDeliveryToResponse(d *delivery.Delivery) *Response {
+func convertDeliveryToResponse(d *delivery.Delivery) *model.Delivery {
 
 	deliveryState, _ := model.DeliveryStateFromString(d.State)
 
@@ -150,7 +292,5 @@ func convertDeliveryToResponse(d *delivery.Delivery) *Response {
 		DeliveryItems: convertItemsToResponse(d.Items),
 	}
 
-	return &Response{
-		Delivery: m,
-	}
+	return m
 }
