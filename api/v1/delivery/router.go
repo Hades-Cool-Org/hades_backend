@@ -5,6 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/delivery"
 	"hades_backend/app/model"
@@ -14,6 +15,15 @@ import (
 )
 
 type Router struct {
+	db *gorm.DB
+}
+
+func NewRouter(db *gorm.DB) *Router {
+	err := db.AutoMigrate(&delivery.Delivery{}, &delivery.Item{}, &delivery.Vehicle{}, &delivery.Session{})
+	if err != nil {
+		panic(err)
+	}
+	return &Router{db: db}
 }
 
 func (u *Router) URL() string {
@@ -33,19 +43,19 @@ func (u *Router) Router() func(r chi.Router) {
 		r.Put("/{delivery_id}", u.Update)
 		r.Delete("/{delivery_id}/items", u.RemoveItems)
 
-		// gerente na loja conferindo pedido// TODO MELHOR NOME?
-		r.Post("/{delivery_id}/conference", u.KKKK)
-
-		r.Post("/session", u.CreateUserTurn)
-		r.Get("/session", u.GetAllTurns)
-		r.Post("/session/{session_id}/end", u.EndUserTurn)
-		r.Delete("/session/{session_id}", u.DeleteUserTurn)
-		r.Get("/session/{session_id}", u.GetUserTurn)
-
-		r.Post("/vehicles", u.CreateVehicle)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
-		r.Get("/vehicles", u.GetAllVehicles)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
-		r.Get("/vehicles/{vehicle_id}", u.GetVehicle)        //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
-		r.Delete("/vehicles/{vehicle_id}", u.DeleteVehicles) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		//// gerente na loja conferindo pedido// TODO MELHOR NOME?
+		//r.Post("/{delivery_id}/conference", u.KKKK)
+		//
+		//r.Post("/session", u.CreateUserTurn)
+		//r.Get("/session", u.GetAllTurns)
+		//r.Post("/session/{session_id}/end", u.EndUserTurn)
+		//r.Delete("/session/{session_id}", u.DeleteUserTurn)
+		//r.Get("/session/{session_id}", u.GetUserTurn)
+		//
+		//r.Post("/vehicles", u.CreateVehicle)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		//r.Get("/vehicles", u.GetAllVehicles)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		//r.Get("/vehicles/{vehicle_id}", u.GetVehicle)        //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		//r.Delete("/vehicles/{vehicle_id}", u.DeleteVehicles) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
 	}
 }
 

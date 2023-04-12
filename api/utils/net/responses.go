@@ -5,8 +5,13 @@ import (
 	"net/http"
 )
 
+//return nil, &net.Error{
+//Code:    http.StatusBadRequest,
+//Message: fmt.Sprintf("Product %d not found in order %d", di.ProductID, d.Order.ID),
+//}
+
 func ErrInvalidRequest(err error) render.Renderer {
-	return &ErrResponse{
+	return &Error{
 		Err:            err,
 		HTTPStatusCode: 400,
 		StatusText:     "Invalid request.",
@@ -15,7 +20,7 @@ func ErrInvalidRequest(err error) render.Renderer {
 }
 
 func ErrForbidden(err error) render.Renderer {
-	return &ErrResponse{
+	return &Error{
 		Err:            err,
 		HTTPStatusCode: 403,
 		StatusText:     "Forbidden",

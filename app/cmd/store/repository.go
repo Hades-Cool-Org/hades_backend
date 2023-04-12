@@ -102,7 +102,7 @@ func (m *MySqlRepository) Create(ctx context.Context, store *model.Store) (uint,
 
 	err := cmd.ParseMysqlError(ctx, "store",
 		m.db.Transaction(func(tx *gorm.DB) error {
-			if err := tx.Omit("Couriers").Create(mm).Error; err != nil {
+			if err := tx.Omit("Couriers").Omit("User").Create(mm).Error; err != nil {
 				return err
 			}
 

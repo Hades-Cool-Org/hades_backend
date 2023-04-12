@@ -12,7 +12,7 @@ var (
 	defaultErrorCode = 500
 )
 
-func ParseErrResponse(err error) *ErrResponse {
+func ParseErrResponse(err error) *Error {
 
 	var hadesErr *HadesError
 
@@ -26,7 +26,7 @@ func ParseErrResponse(err error) *ErrResponse {
 		return defaultErrorCode
 	}()
 
-	return &ErrResponse{
+	return &Error{
 		Err:            err,
 		HTTPStatusCode: status,
 		StatusText:     err.Error(),

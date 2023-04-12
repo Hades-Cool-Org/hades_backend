@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 	customMiddleware "hades_backend/api/middleware"
+	"hades_backend/api/v1/delivery"
 	"hades_backend/api/v1/login"
 	"hades_backend/api/v1/order"
 	"hades_backend/api/v1/product"
@@ -93,6 +94,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 
 		orderRouter := order.NewRouter(m.DB)
 		r.Route(orderRouter.URL(), orderRouter.Router())
+
+		deliveryRouter := delivery.NewRouter(m.DB)
+		r.Route(deliveryRouter.URL(), deliveryRouter.Router())
 	})
 }
 

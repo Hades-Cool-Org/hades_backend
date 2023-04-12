@@ -14,6 +14,11 @@ type Stock struct {
 	Products []*ProductData `gorm:"foreignKey:StockID"`
 }
 
+// TableName overrides the table name used by ProductData to `stock_products`
+func (Stock) TableName() string {
+	return "stock"
+}
+
 type ProductData struct {
 	Current   float32
 	Suggested float32

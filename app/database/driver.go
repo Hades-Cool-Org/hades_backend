@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	// DB is the database connection
-	DB *gorm.DB
+	DB *gorm.DB /// TODO: NEED TO REMOVE THIS GLOBAL VARIABLE AND USE DEPENDENCY INJECTION BEFORE PRODUCTION !!!
 )
 
 func init() {

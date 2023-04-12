@@ -29,7 +29,7 @@ type Delivery struct {
 	SessionID uint
 	Session   *Session
 
-	OrderID uint
+	OrderID uint `gorm:"index"`
 	Order   *order.Order
 
 	Items []*Item
@@ -104,13 +104,24 @@ func CreateDelivery(ctx context.Context, deliveryParam *model.Delivery) (*Delive
 
 	if deliveryParam.Order.ID != 0 {
 		o := new(order.Order)
-		if err := db.Preload("User").First(o, "id = ?", deliveryParam.Order.ID).Error; err != nil {
+		if err := db.
+			Preload("Items").
+			Preload("Vendor").
+			Preload("User").
+			First(o, "id = ?", deliveryParam.Order.ID).Error; err != nil {
 			return nil, cmd.ParseMysqlError(ctx, "order", err)
 		}
 		d.Order = o
 	}
 
 	if len(deliveryParam.DeliveryItems) > 0 {
+
+		err := validateOrderItems(ctx, d.Order, deliveryParam.DeliveryItems)
+
+		if err != nil {
+			return nil, err
+		}
+
 		for _, di := range deliveryParam.DeliveryItems {
 			i := &Item{
 				ProductID: di.ProductID,
@@ -128,6 +139,61 @@ func CreateDelivery(ctx context.Context, deliveryParam *model.Delivery) (*Delive
 	l.Info(fmt.Sprintf("Delivery -> created\n [%d]", d.ID))
 
 	return d, nil
+}
+
+func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*model.DeliveryItem) error {
+
+	orderItemMap := make(map[string]*order.Item)
+	//order.item tem productId, orderId e storeId como primary key
+	fnOrderItemMapKey := func(productID uint, storeID uint) string {
+		return fmt.Sprintf("%d-%d", productID, storeID)
+	}
+
+	for _, item := range o.Items {
+		key := fnOrderItemMapKey(item.ProductID, item.StoreID)
+		orderItemMap[key] = item
+	}
+
+	//getting other deliveries for given order and subtracting available quantity
+	orderDeliveries, err := GetDeliveryByOrderID(ctx, o.ID)
+
+	if err != nil {
+		return err
+	}
+
+	for _, orderDelivery := range orderDeliveries {
+		for _, orderDeliveryItem := range orderDelivery.Items {
+			key := fnOrderItemMapKey(orderDeliveryItem.ProductID, orderDeliveryItem.StoreID)
+			i, ok := orderItemMap[key]
+			if ok {
+				i.Quantity -= orderDeliveryItem.Quantity
+			}
+		}
+	}
+
+	for _, di := range deliveryItems {
+
+		key := fnOrderItemMapKey(di.ProductID, di.StoreID)
+
+		itemInOrder, ok := orderItemMap[key]
+
+		if !ok {
+			return net.NewHadesError(ctx,
+				errors.New(fmt.Sprintf("Product %d not found in order %d", di.ProductID, o.ID)),
+				http.StatusBadRequest,
+			)
+		}
+
+		if di.Quantity > itemInOrder.Quantity {
+			return net.NewHadesError(ctx,
+				errors.New(fmt.Sprintf("Product %d quantity %f is greater than order quantity %f", di.ProductID, di.Quantity, itemInOrder.Quantity)),
+				http.StatusBadRequest,
+			)
+		}
+
+	}
+
+	return nil
 }
 
 // UpdateDelivery creates a new delivery
@@ -172,10 +238,26 @@ func UpdateDelivery(ctx context.Context, deliveryID uint, deliveryParam *model.D
 	//	}
 	//	existingDelivery.Order = o
 	//}
-
 	tx := db.Begin()
 
 	if len(deliveryParam.DeliveryItems) > 0 {
+
+		orderWithItems := new(order.Order)
+
+		if err := db.
+			Preload("Items").
+			Preload("Vendor").
+			Preload("User").
+			First(orderWithItems, "id = ?", existingDelivery.OrderID).Error; err != nil {
+			return nil, cmd.ParseMysqlError(ctx, "order", err)
+		}
+
+		err := validateOrderItems(ctx, orderWithItems, deliveryParam.DeliveryItems)
+
+		if err != nil {
+			return nil, err
+		}
+
 		if err := existingDelivery.updateItems(deliveryParam.DeliveryItems); err != nil {
 			return nil, cmd.ParseMysqlError(ctx, "DeliveryItems", err)
 		}
@@ -280,6 +362,24 @@ func GetDelivery(ctx context.Context, deliveryID uint) (*Delivery, error) {
 	}
 
 	return delivery, nil
+}
+
+func GetDeliveryByOrderID(ctx context.Context, orderID uint) ([]*Delivery, error) {
+
+	l := logging.FromContext(ctx)
+	db := database.DB.WithContext(ctx)
+
+	l.Info(fmt.Sprintf("Getting delivery by orderID -> \n [%d]", orderID))
+
+	var deliveries []*Delivery
+
+	if err := db.
+		Preload("Items").
+		Find(&deliveries, "order_id = ?", orderID).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "delivery", err)
+	}
+
+	return deliveries, nil
 }
 
 func DeleteDelivery(ctx context.Context, deliveryID uint) error {

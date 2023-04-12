@@ -20,13 +20,16 @@ func (r2 *ItemRequest) Bind(r *http.Request) error {
 		return errors.New("products cannot be empty")
 	}
 
-	for _, product := range r2.DeliveryItems {
+	for _, item := range r2.DeliveryItems {
 
-		if product.ProductID == 0 {
-			return errors.New("product cannot be empty")
+		if item.ProductID == 0 {
+			return errors.New("productID cannot be empty")
+		}
+		if item.StoreID == 0 {
+			return errors.New("storeID cannot be empty")
 		}
 
-		if product.Quantity == 0 {
+		if item.Quantity == 0 {
 			return errors.New("quantity cannot be empty")
 		}
 	}
