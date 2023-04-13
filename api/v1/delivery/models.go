@@ -116,3 +116,44 @@ type ListResponse struct {
 func (l *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
+
+type SessionListResponse struct {
+	Sessions []*model.Session `json:"sessions"`
+}
+
+func (l *SessionListResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type VehicleRequest struct {
+	*model.Vehicle
+}
+
+func (r2 *VehicleRequest) Bind(r *http.Request) error {
+
+	if r2.Type == "" {
+		return errors.New("type cannot be empty")
+	}
+
+	if r2.Name == "" {
+		return errors.New("name cannot be empty")
+	}
+
+	return nil
+}
+
+type VehicleResponse struct {
+	*model.Vehicle
+}
+
+func (l *VehicleResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type ListVehicleResponse struct {
+	Deliveries []*model.Vehicle `json:"vehicles"`
+}
+
+func (l *ListVehicleResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}

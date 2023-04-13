@@ -55,11 +55,9 @@ func CreateSession(ctx context.Context, sessionParam *model.Session) (*Session, 
 
 	/// checking for current sessions for the user/vehicle
 	if err := db.
-		First(s, "(user_id = ? OR vehicle_id = ?)"+
-			"AND end_date IS NULL",
+		First(s, "(user_id = ? OR vehicle_id = ?)",
 			sessionParam.User.ID,
 			sessionParam.Vehicle.ID,
-			//datatypes.Date(time.Now()), // TODO: need to check timezones I guess
 		).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			l.Info("Session not found, creating new one")
@@ -68,7 +66,7 @@ func CreateSession(ctx context.Context, sessionParam *model.Session) (*Session, 
 		}
 	}
 
-	if s == nil {
+	if s != nil {
 		return nil, net.NewHadesError(ctx, errors.New("session already exists"), 400)
 	}
 
@@ -76,35 +74,6 @@ func CreateSession(ctx context.Context, sessionParam *model.Session) (*Session, 
 	s.VehicleID = sessionParam.Vehicle.ID
 
 	if err := database.DB.Create(s).Error; err != nil {
-		return nil, cmd.ParseMysqlError(ctx, "session", err)
-	}
-
-	return s, nil
-}
-
-func EndSession(ctx context.Context, sessionID uint) (*Session, error) {
-
-	l := logging.FromContext(ctx)
-	db := database.DB.WithContext(ctx)
-
-	l.Info(fmt.Sprintf("Ending session -> \n [%d]", sessionID))
-
-	s := new(Session)
-
-	if err := db.First(s, "id = ?", sessionID).Error; err != nil {
-		return nil, cmd.ParseMysqlError(ctx, "session", err)
-	}
-
-	if !s.EndDate.Valid {
-		x := time.Now()
-		s.EndDate.Time = x
-		s.EndDate.Valid = true
-	} else {
-		l.Debug("nothing to do here")
-		return s, nil
-	}
-
-	if err := database.DB.Save(s).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "session", err)
 	}
 
@@ -194,9 +163,9 @@ func (o *GetSessionOptions) parseSessionParam(query *gorm.DB) *gorm.DB {
 
 	if s := o.Params.Get("active"); s != "" {
 		if s == "true" {
-			query = query.Where(tableName + ".end_date IS NULL")
+			query = query.Where(tableName + ".deleted_at IS NULL")
 		} else {
-			query = query.Where(tableName + ".end_date IS NOT NULL")
+			query = query.Where(tableName + ".deleted_at IS NOT NULL")
 		}
 	}
 

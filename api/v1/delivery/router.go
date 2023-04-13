@@ -27,12 +27,13 @@ func NewRouter(db *gorm.DB) *Router {
 }
 
 func (u *Router) URL() string {
-	return "/delivery"
+	return "/deliveries"
 }
 
 const deliveryIdParam = "delivery_id"
 const userIdParam = "user_id"
-const dateStartParam = "date_start"
+const sessionIdParam = "session_id"
+const vehicleIdParam = "vehicle_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
@@ -46,16 +47,15 @@ func (u *Router) Router() func(r chi.Router) {
 		//// gerente na loja conferindo pedido// TODO MELHOR NOME?
 		//r.Post("/{delivery_id}/conference", u.KKKK)
 		//
-		//r.Post("/session", u.CreateUserTurn)
-		//r.Get("/session", u.GetAllTurns)
-		//r.Post("/session/{session_id}/end", u.EndUserTurn)
-		//r.Delete("/session/{session_id}", u.DeleteUserTurn)
-		//r.Get("/session/{session_id}", u.GetUserTurn)
+		r.Post("/sessions", u.CreateSession)
+		r.Get("/sessions", u.GetAllSessions)
+		r.Delete("/sessions/{session_id}", u.EndSession)
+		r.Get("/sessions/{session_id}", u.GetSession)
 		//
-		//r.Post("/vehicles", u.CreateVehicle)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
-		//r.Get("/vehicles", u.GetAllVehicles)                 //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
-		//r.Get("/vehicles/{vehicle_id}", u.GetVehicle)        //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
-		//r.Delete("/vehicles/{vehicle_id}", u.DeleteVehicles) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Post("/vehicles", u.CreateVehicle)                //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Get("/vehicles", u.GetAllVehicles)                //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Get("/vehicles/{vehicle_id}", u.GetVehicle)       //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
+		r.Delete("/vehicles/{vehicle_id}", u.DeleteVehicle) //Associar um carro a um entregador //todo: usar mesma funcao que end delivery")
 	}
 }
 
@@ -211,10 +211,186 @@ func (u *Router) RemoveItems(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, http.StatusOK)
 }
 
+func (u *Router) CreateSession(w http.ResponseWriter, r *http.Request) {
+
+	var request SessionRequest
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	s, err := delivery.CreateSession(r.Context(), request.Session)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.Render(w, r, &SessionResponse{convertSessionToResponse(s)})
+
+}
+
+func (u *Router) GetAllSessions(w http.ResponseWriter, r *http.Request) {
+
+	var opts *delivery.GetSessionOptions
+
+	opts.Params = r.URL.Query()
+
+	sessions, err := delivery.GetSessions(r.Context(), opts)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &SessionListResponse{convertMultipleSessionsToResponse(sessions)})
+}
+
+func (u *Router) GetSession(w http.ResponseWriter, r *http.Request) {
+	param := chi.URLParam(r, sessionIdParam)
+
+	if param == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("sessionId is empty")))
+		return
+	}
+
+	sessionIdInt, err := strconv.Atoi(param)
+
+	s, err := delivery.GetSession(r.Context(), uint(sessionIdInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &SessionResponse{convertSessionToResponse(s)})
+}
+
+func (u *Router) EndSession(w http.ResponseWriter, r *http.Request) {
+	param := chi.URLParam(r, sessionIdParam)
+
+	if param == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("sessionId is empty")))
+		return
+	}
+
+	sessionIdInt, err := strconv.Atoi(param)
+
+	err = delivery.DeleteSession(r.Context(), uint(sessionIdInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusNoContent)
+}
+
+func (u *Router) CreateVehicle(w http.ResponseWriter, r *http.Request) {
+
+	var request VehicleRequest
+
+	if err := render.Bind(r, &request); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	v, err := delivery.CreateVehicle(r.Context(), request.Vehicle)
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.Render(w, r, &VehicleResponse{convertVehicleToResponse(v)})
+}
+
+func (u *Router) GetAllVehicles(w http.ResponseWriter, r *http.Request) {
+	vehicles, err := delivery.GetAllVehicles(r.Context())
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &ListVehicleResponse{convertMultipleVehiclesToResponse(vehicles)})
+}
+
+func (u *Router) DeleteVehicle(w http.ResponseWriter, r *http.Request) {
+	param := chi.URLParam(r, vehicleIdParam)
+
+	if param == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("vehicleId is empty")))
+		return
+	}
+
+	vehicleIdInt, err := strconv.Atoi(param)
+
+	err = delivery.DeleteVehicle(r.Context(), uint(vehicleIdInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusNoContent)
+}
+
+func (u *Router) GetVehicle(w http.ResponseWriter, r *http.Request) {
+	param := chi.URLParam(r, vehicleIdParam)
+
+	if param == "" {
+		render.Render(w, r, net.ErrInvalidRequest(errors.New("vehicleId is empty")))
+		return
+	}
+
+	vehicleIdInt, err := strconv.Atoi(param)
+
+	v, err := delivery.GetVehicle(r.Context(), uint(vehicleIdInt))
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+	render.Render(w, r, &VehicleResponse{convertVehicleToResponse(v)})
+}
+
+func convertMultipleVehiclesToResponse(vehicles []*delivery.Vehicle) []*model.Vehicle {
+	var responses []*model.Vehicle
+	for _, v := range vehicles {
+		responses = append(responses, convertVehicleToResponse(v))
+	}
+	return responses
+}
+
+func convertVehicleToResponse(v *delivery.Vehicle) *model.Vehicle {
+	return &model.Vehicle{
+		ID:   v.ID,
+		Name: v.Name,
+		Type: v.Type,
+	}
+}
+
 func convertMultipleDeliveriesToResponse(deliveries []*delivery.Delivery) []*model.Delivery {
 	var responses []*model.Delivery
 	for _, d := range deliveries {
 		responses = append(responses, convertDeliveryToResponse(d))
+	}
+	return responses
+}
+
+func convertMultipleSessionsToResponse(sessions []*delivery.Session) []*model.Session {
+	var responses []*model.Session
+	for _, s := range sessions {
+		responses = append(responses, convertSessionToResponse(s))
 	}
 	return responses
 }
