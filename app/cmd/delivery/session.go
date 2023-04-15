@@ -66,7 +66,7 @@ func CreateSession(ctx context.Context, sessionParam *model.Session) (*Session, 
 		}
 	}
 
-	if s != nil {
+	if s.ID != 0 {
 		return nil, net.NewHadesError(ctx, errors.New("session already exists"), 400)
 	}
 
