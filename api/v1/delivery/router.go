@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"github.com/shopspring/decimal"
@@ -10,6 +11,7 @@ import (
 	"hades_backend/app/cmd/delivery"
 	"hades_backend/app/model"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -21,7 +23,8 @@ type Router struct {
 func NewRouter(db *gorm.DB) *Router {
 	err := db.AutoMigrate(&delivery.Delivery{}, &delivery.Item{}, &delivery.Vehicle{}, &delivery.Session{})
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	return &Router{db: db}
 }

@@ -2,9 +2,11 @@ package purchase_list
 
 import (
 	"context"
+	"fmt"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
 	"hades_backend/app/model"
+	"os"
 )
 
 type Repository interface {
@@ -31,7 +33,8 @@ func NewRepository(db *gorm.DB) Repository {
 	err := db.AutoMigrate(&PurchaseList{})
 
 	if err != nil {
-		panic("oops!")
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	return &MySqlRepository{db: db}

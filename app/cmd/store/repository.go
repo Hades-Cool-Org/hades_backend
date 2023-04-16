@@ -2,10 +2,12 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
 	users "hades_backend/app/cmd/user"
 	"hades_backend/app/model"
+	"os"
 )
 
 type Repository interface {
@@ -91,7 +93,8 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	err := db.AutoMigrate(&Store{})
 
 	if err != nil {
-		panic("oops!")
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	return &MySqlRepository{db: db}

@@ -2,9 +2,11 @@ package stock
 
 import (
 	"context"
+	"fmt"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
 	"hades_backend/app/model"
+	"os"
 )
 
 type Repository interface {
@@ -49,7 +51,8 @@ func NewMySQLRepository(db *gorm.DB) Repository {
 	err := db.AutoMigrate(&Stock{}, &ProductData{})
 
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	return &MySQLRepository{db: db}

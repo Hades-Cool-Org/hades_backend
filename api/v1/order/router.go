@@ -2,6 +2,7 @@ package order
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"gorm.io/gorm"
@@ -9,6 +10,7 @@ import (
 	order2 "hades_backend/app/cmd/order"
 	"hades_backend/app/model"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -20,7 +22,8 @@ type Router struct {
 func NewRouter(db *gorm.DB) *Router {
 	err := db.AutoMigrate(&order2.Order{}, &order2.Item{}, &order2.Payment{})
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	return &Router{db: db}
 }

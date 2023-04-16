@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	customMiddleware "hades_backend/api/middleware"
 	"hades_backend/app/database"
+	"hades_backend/app/monitoring"
 	"net/http"
 )
 
@@ -27,6 +28,7 @@ func Handler(l *zap.Logger) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(customMiddleware.Logger(l))
 	r.Use(middleware.Recoverer)
+	r.Use(customMiddleware.NewHTTP(monitoring.NewRelicApp))
 
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("pong"))

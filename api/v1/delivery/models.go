@@ -54,6 +54,14 @@ func (r2 *Response) Render(w http.ResponseWriter, r *http.Request) error {
 
 func (r2 *Request) Bind(r *http.Request) error {
 
+	if r2.Session == nil {
+		return errors.New("session cannot be empty")
+	}
+
+	if r2.Order == nil {
+		return errors.New("order cannot be empty")
+	}
+
 	if r2.Session.ID == 0 {
 		return errors.New("session ID cannot be empty")
 	}

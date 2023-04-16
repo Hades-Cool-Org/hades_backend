@@ -3,9 +3,11 @@ package vendors
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
 	"hades_backend/app/model"
+	"os"
 )
 
 type Repository interface {
@@ -30,7 +32,8 @@ func NewMySqlRepository(db *gorm.DB) *MySqlRepository {
 	err := db.AutoMigrate(&Vendor{})
 
 	if err != nil {
-		panic(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	return &MySqlRepository{db: db}

@@ -35,3 +35,7 @@ Docker
 
 - `docker-compose -f stack.yml up`
 - `docker-compose -f stack.yml down`
+
+NewRelic
+
+- https://one.newrelic.com/nr1-core/install-newrelic/installation-plan?account=3811459&state=bcb0d7b6-fccd-5d97-c4d2-95c8b92778bc
