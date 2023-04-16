@@ -6,6 +6,7 @@ import (
 	"hades_backend/api"
 	"hades_backend/app/config"
 	"hades_backend/app/logging"
+	"hades_backend/app/monitoring"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +20,9 @@ func main() {
 	l := logging.Initialize()
 	//  configs
 	newConfig := config.Cfg
+
+	// New Relic
+	monitoring.New(l)
 
 	// The HTTP Server
 	l.Info("starting server")

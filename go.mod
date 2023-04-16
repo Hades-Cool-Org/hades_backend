@@ -12,6 +12,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/newrelic/go-agent/v3 v3.21.0
+	github.com/newrelic/go-agent/v3/integrations/nrzap v1.0.1
 	github.com/pkg/errors v0.8.1
 	github.com/shopspring/decimal v1.3.1
 	go.uber.org/zap v1.24.0

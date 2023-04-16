@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/delivery"
+	"hades_backend/app/cmd/product"
 	"hades_backend/app/model"
 	"net/http"
 	"os"
@@ -237,9 +237,9 @@ func (u *Router) CreateSession(w http.ResponseWriter, r *http.Request) {
 
 func (u *Router) GetAllSessions(w http.ResponseWriter, r *http.Request) {
 
-	var opts *delivery.GetSessionOptions
-
-	opts.Params = r.URL.Query()
+	opts := &delivery.GetSessionOptions{
+		Params: r.URL.Query(),
+	}
 
 	sessions, err := delivery.GetSessions(r.Context(), opts)
 
@@ -391,6 +391,10 @@ func convertMultipleDeliveriesToResponse(deliveries []*delivery.Delivery) []*mod
 }
 
 func convertMultipleSessionsToResponse(sessions []*delivery.Session) []*model.Session {
+	if sessions == nil {
+		return []*model.Session{}
+	}
+
 	var responses []*model.Session
 	for _, s := range sessions {
 		responses = append(responses, convertSessionToResponse(s))
@@ -413,7 +417,12 @@ func convertSessionToResponse(s *delivery.Session) *model.Session {
 			Type: s.Vehicle.Type,
 		},
 		StartDate: s.CreatedAt.Format(time.RFC3339),
-		EndDate:   s.EndDate.Time.Format(time.RFC3339),
+		EndDate: func() string {
+			if s.EndDate.Valid {
+				return s.EndDate.Time.Format(time.RFC3339)
+			}
+			return ""
+		}(),
 	}
 }
 
@@ -422,16 +431,29 @@ func convertItemsToResponse(items []*delivery.Item) []*model.DeliveryItem {
 	var deliveryItems []*model.DeliveryItem
 
 	for _, i := range items {
-		deliveryItems = append(deliveryItems, &model.DeliveryItem{
-			ProductID:     i.ProductID,
-			StoreID:       i.StoreID,
-			Name:          i.Product.Name,
-			ImageUrl:      i.Product.ImageUrl,
-			MeasuringUnit: i.Product.MeasuringUnit,
-			Quantity:      i.Quantity,
+		di := &model.DeliveryItem{
+			ProductID: i.ProductID,
+			StoreID:   i.StoreID,
+			Quantity:  i.Quantity,
+		}
+
+		nullCheck[product.Product](i.Product, func(p product.Product) {
+			di.Name = p.Name
+			di.ImageUrl = p.ImageUrl
+			di.MeasuringUnit = p.MeasuringUnit
 		})
+
+		deliveryItems = append(deliveryItems, di)
 	}
 	return deliveryItems
+}
+
+func nullCheck[T any](input *T, fn func(T)) {
+	if input == nil {
+		return
+	}
+
+	fn(*input)
 }
 
 func convertDeliveryToResponse(d *delivery.Delivery) *model.Delivery {
@@ -440,33 +462,25 @@ func convertDeliveryToResponse(d *delivery.Delivery) *model.Delivery {
 
 	orderState, _ := model.OrderStateFromString(d.Order.State)
 
+	user := &model.User{
+		ID: d.Order.UserID,
+	}
+
 	o := &model.Order{
 		ID:          d.OrderID,
 		Vendor:      nil,
 		CreatedDate: d.Order.CreatedAt.Format(time.RFC3339),
 		State:       orderState,
-		EndDate:     d.Order.CompletedDate.Time.Format(time.RFC3339),
-		User: &model.User{
-			ID:    d.Order.UserID,
-			Name:  d.Order.User.Name,
-			Email: d.Order.User.Email,
-			Phone: d.Order.User.Phone,
-		},
-		Total: decimal.Decimal{},
-		Payments: func() []*model.Payment {
-			var payments []*model.Payment
-			for _, p := range d.Order.Payments {
-				payments = append(payments, &model.Payment{
-					ID:    p.ID,
-					Type:  p.Type,
-					Total: p.Total,
-					Date:  p.CreatedAt.Format(time.RFC3339),
-					Text:  p.Text,
-				})
+		EndDate: func() string {
+			if d.Order.DeletedAt.Valid {
+				return d.Order.DeletedAt.Time.Format(time.RFC3339)
 			}
-			return payments
+			return ""
 		}(),
-		Items: nil, //items empty, not sure if we will need that
+		User:     user,
+		Total:    d.Order.Total,
+		Payments: nil,
+		Items:    nil, //items empty, not sure if we will need that
 	}
 
 	s := convertSessionToResponse(d.Session)

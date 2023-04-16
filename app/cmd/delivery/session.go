@@ -70,6 +70,18 @@ func CreateSession(ctx context.Context, sessionParam *model.Session) (*Session, 
 		return nil, net.NewHadesError(ctx, errors.New("session already exists"), 400)
 	}
 
+	u := new(user.User)
+	if err := db.First(u, "id = ?", sessionParam.User.ID).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "user", err)
+	}
+	s.User = u
+
+	v := new(Vehicle)
+	if err := db.First(v, "id = ?", sessionParam.User.ID).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "vehicle", err)
+	}
+	s.Vehicle = v
+
 	s.UserID = sessionParam.User.ID
 	s.VehicleID = sessionParam.Vehicle.ID
 
