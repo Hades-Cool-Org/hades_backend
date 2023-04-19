@@ -9,8 +9,6 @@ import (
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
-	"hades_backend/app/cmd/product"
-	"hades_backend/app/cmd/store"
 	"hades_backend/app/cmd/user"
 	"hades_backend/app/cmd/vendors"
 	"hades_backend/app/database"
@@ -123,7 +121,6 @@ func (o *Order) updateItems(newItems []*model.Item) {
 
 		if _, ok := mapItem[key]; ok {
 			mapItem[key].Quantity = item.Quantity
-			mapItem[key].Available = item.Available
 			mapItem[key].UnitPrice = p
 		} else {
 			i = append(i, &Item{
@@ -131,7 +128,6 @@ func (o *Order) updateItems(newItems []*model.Item) {
 				ProductID: item.ProductID,
 				StoreID:   item.StoreID,
 				Quantity:  item.Quantity,
-				Available: item.Available,
 				UnitPrice: p,
 			})
 		}
@@ -247,7 +243,9 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 		existingOrder.Total = prices.Total
 	}
 
-	existingOrder.State = string(orderParams.State)
+	if orderParams.State != nil {
+		existingOrder.State = string(*orderParams.State) //TODO: not sure if we need to always update this
+	}
 
 	if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(existingOrder).Error; err != nil {
 		tx.Rollback()
@@ -456,41 +454,6 @@ func (o *GetOrdersOptions) parseOrderParams(query *gorm.DB) *gorm.DB {
 	}
 
 	return query
-}
-
-type Payment struct {
-	gorm.Model
-	Type  string
-	Total decimal.Decimal `gorm:"type:decimal(12,3);"`
-	Text  string          `gorm:"type:text"`
-
-	OrderID uint
-}
-
-func (p Payment) TableName() string {
-	return "payments"
-}
-
-type Item struct {
-	OrderID uint `gorm:"primaryKey;autoIncrement:false"`
-
-	ProductID uint `gorm:"primaryKey;autoIncrement:false"`
-	Product   *product.Product
-
-	StoreID uint `gorm:"primaryKey;autoIncrement:false"`
-	Store   *store.Store
-
-	Quantity  float64
-	Available float64
-	UnitPrice decimal.Decimal `gorm:"type:decimal(12,2);"`
-}
-
-func (i *Item) CalculateTotal() decimal.Decimal {
-	return i.UnitPrice.Mul(decimal.NewFromFloat(i.Quantity))
-}
-
-func (i Item) TableName() string {
-	return "order_items"
 }
 
 func orderQuery(db *gorm.DB) *gorm.DB {

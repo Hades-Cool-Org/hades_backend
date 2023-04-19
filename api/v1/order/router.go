@@ -144,7 +144,6 @@ func convertOrderItems(z []*order2.Item) []*model.Item {
 			ImageUrl:      p.Product.ImageUrl,
 			MeasuringUnit: p.Product.MeasuringUnit,
 			Quantity:      p.Quantity,
-			Available:     p.Available,
 			Total:         p.CalculateTotal(),
 		}
 	}

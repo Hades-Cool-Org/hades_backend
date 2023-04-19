@@ -116,7 +116,13 @@ func CreateDelivery(ctx context.Context, deliveryParam *model.Delivery) (*Delive
 
 	if len(deliveryParam.DeliveryItems) > 0 {
 
-		err := validateOrderItems(ctx, d.Order, deliveryParam.DeliveryItems)
+		orderItems, err := validateOrderItems(ctx, d.Order, deliveryParam.DeliveryItems)
+
+		if err != nil {
+			return nil, err
+		}
+
+		err = updateOrderStatus(ctx, orderItems, d.Order)
 
 		if err != nil {
 			return nil, err
@@ -141,7 +147,36 @@ func CreateDelivery(ctx context.Context, deliveryParam *model.Delivery) (*Delive
 	return d, nil
 }
 
-func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*model.DeliveryItem) error {
+func updateOrderStatus(ctx context.Context, items map[string]*order.Item, o *order.Order) error {
+
+	l := logging.FromContext(ctx)
+	l.Info("checking if order status must be updated")
+
+	status := model.Accepted
+
+	for _, item := range items {
+		if item.Quantity != 0 {
+			status = model.AcceptedPartially
+			l.Debug(fmt.Sprintf("item [%d] -> quantity not zero, order status -> AcceptedPartially", item.ProductID))
+			break
+		}
+	}
+
+	if o.State == status.String() {
+		l.Debug(fmt.Sprintf("order status [%s] -> no change", status))
+		return nil
+	}
+
+	l.Info(fmt.Sprintf("order status [%s] -> updating", status))
+
+	err := order.UpdateOrder(ctx, o.ID, &model.Order{
+		State: &status,
+	})
+
+	return err
+}
+
+func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*model.DeliveryItem) (map[string]*order.Item, error) {
 
 	orderItemMap := make(map[string]*order.Item)
 	//order.item tem productId, orderId e storeId como primary key
@@ -158,7 +193,7 @@ func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*mo
 	orderDeliveries, err := GetDeliveryByOrderID(ctx, o.ID)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	for _, orderDelivery := range orderDeliveries {
@@ -178,14 +213,14 @@ func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*mo
 		itemInOrder, ok := orderItemMap[key]
 
 		if !ok {
-			return net.NewHadesError(ctx,
+			return nil, net.NewHadesError(ctx,
 				errors.New(fmt.Sprintf("Product %d not found in order %d", di.ProductID, o.ID)),
 				http.StatusBadRequest,
 			)
 		}
 
 		if di.Quantity > itemInOrder.Quantity {
-			return net.NewHadesError(ctx,
+			return nil, net.NewHadesError(ctx,
 				errors.New(fmt.Sprintf("Product %d quantity %f is greater than order quantity %f", di.ProductID, di.Quantity, itemInOrder.Quantity)),
 				http.StatusBadRequest,
 			)
@@ -193,7 +228,7 @@ func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*mo
 
 	}
 
-	return nil
+	return orderItemMap, nil
 }
 
 // UpdateDelivery creates a new delivery
@@ -252,7 +287,13 @@ func UpdateDelivery(ctx context.Context, deliveryID uint, deliveryParam *model.D
 			return nil, cmd.ParseMysqlError(ctx, "order", err)
 		}
 
-		err := validateOrderItems(ctx, orderWithItems, deliveryParam.DeliveryItems)
+		orderItems, err := validateOrderItems(ctx, orderWithItems, deliveryParam.DeliveryItems)
+
+		if err != nil {
+			return nil, err
+		}
+
+		err = updateOrderStatus(ctx, orderItems, orderWithItems)
 
 		if err != nil {
 			return nil, err
@@ -375,6 +416,7 @@ func GetDeliveryByOrderID(ctx context.Context, orderID uint) ([]*Delivery, error
 
 	if err := db.
 		Preload("Items").
+		Preload("Items.Product").
 		Find(&deliveries, "order_id = ?", orderID).Error; err != nil {
 		return nil, cmd.ParseMysqlError(ctx, "delivery", err)
 	}
