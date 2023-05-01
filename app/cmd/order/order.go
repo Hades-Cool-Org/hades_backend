@@ -97,7 +97,7 @@ func (o *Order) UpdateTotal() {
 }
 
 // updateItems updates the items of the order - NO ITEMS ARE REMOVED
-func (o *Order) updateItems(newItems []*model.Item) {
+func (o *Order) updateItems(newItems []*model.OrderItem) {
 
 	o.ModificationLock.Lock()
 	defer o.ModificationLock.Unlock()
@@ -141,7 +141,7 @@ func (o *Order) updateItems(newItems []*model.Item) {
 }
 
 // RemoveItems removes given items from the order
-func RemoveItems(ctx context.Context, orderID uint, items []*model.Item) error {
+func RemoveItems(ctx context.Context, orderID uint, items []*model.OrderItem) error {
 
 	db := database.DB.WithContext(ctx)
 	l := logging.FromContext(ctx)

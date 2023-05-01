@@ -16,7 +16,7 @@ type Item struct {
 	Store   *store.Store
 
 	Quantity  float64
-	UnitPrice decimal.Decimal `gorm:"type:decimal(12,2);"`
+	UnitPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 }
 
 func (i *Item) CalculateTotal() decimal.Decimal {

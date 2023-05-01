@@ -5,18 +5,6 @@ import (
 	"net/http"
 )
 
-type Occurrence struct {
-	ID        string     `json:"id"`
-	State     string     `json:"state"` //ABERTO,COLETADO,ENTREGUE
-	OrderID   string     `json:"order_id"`
-	Type      string     `json:"type"`  //positive negative
-	Total     string     `json:"total"` //todo: mudar para numeric?
-	User      *User      `json:"user"`
-	Products  []*Product `json:"products"`
-	StartDate string     `json:"start_date"`
-	EndDate   string     `json:"end_date"`
-}
-
 type Product struct {
 	ID               string  `json:"id"`
 	Name             string  `json:"name"`

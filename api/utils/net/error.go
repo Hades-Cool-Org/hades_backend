@@ -53,3 +53,11 @@ func NewHadesError(ctx context.Context, err error, status int) *HadesError {
 func NewForbiddenError(ctx context.Context, err error) *HadesError {
 	return NewHadesError(ctx, err, http.StatusForbidden)
 }
+
+func NewNotFoundError(ctx context.Context, err error) *HadesError {
+	return NewHadesError(ctx, err, http.StatusNotFound)
+}
+
+func NewBadRequestError(ctx context.Context, err error) *HadesError {
+	return NewHadesError(ctx, err, http.StatusBadRequest)
+}

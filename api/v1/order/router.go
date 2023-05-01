@@ -132,11 +132,11 @@ func convertOrderToResponse(o *order2.Order) *model.Order {
 	return z
 }
 
-func convertOrderItems(z []*order2.Item) []*model.Item {
-	is := make([]*model.Item, len(z))
+func convertOrderItems(z []*order2.Item) []*model.OrderItem {
+	is := make([]*model.OrderItem, len(z))
 
 	for i, p := range z {
-		is[i] = &model.Item{
+		is[i] = &model.OrderItem{
 			ProductID:     p.ProductID,
 			OrderID:       p.OrderID,
 			StoreID:       p.StoreID,

@@ -107,7 +107,7 @@ func (r3 *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type DeleteItemsRequest struct {
-	Items []*model.Item `json:"items"`
+	Items []*model.OrderItem `json:"items"`
 }
 
 func (p *DeleteItemsRequest) Bind(r *http.Request) error {
@@ -132,7 +132,7 @@ func (p *DeleteItemsRequest) Bind(r *http.Request) error {
 }
 
 type UpdateItemRequest struct {
-	*model.Item
+	*model.OrderItem
 }
 
 func (p *UpdateItemRequest) Bind(r *http.Request) error {
@@ -153,7 +153,7 @@ func (p *UpdateItemRequest) Bind(r *http.Request) error {
 }
 
 type ItemResponse struct {
-	*model.Item
+	*model.OrderItem
 }
 
 func (p ItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
@@ -161,7 +161,7 @@ func (p ItemResponse) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type ListItemResponse struct {
-	Items []*model.Item `json:"items"`
+	Items []*model.OrderItem `json:"items"`
 }
 
 func (p ListItemResponse) Render(w http.ResponseWriter, r *http.Request) error {

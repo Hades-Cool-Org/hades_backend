@@ -47,8 +47,8 @@ type Order struct {
 	User        *User           `json:"user"`
 	Total       decimal.Decimal `json:"total,omitempty"`
 
-	Payments []*Payment `json:"payments,omitempty"`
-	Items    []*Item    `json:"items,omitempty"`
+	Payments []*Payment   `json:"payments,omitempty"`
+	Items    []*OrderItem `json:"items,omitempty"`
 }
 
 type Payment struct {
@@ -59,7 +59,7 @@ type Payment struct {
 	Text  string          `json:"text"`
 }
 
-type Item struct {
+type OrderItem struct {
 	ProductID uint `json:"product_id"`
 	OrderID   uint `json:"order_id,omitempty"`
 	StoreID   uint `json:"store_id,omitempty"`
@@ -71,7 +71,7 @@ type Item struct {
 	Total         decimal.Decimal `json:"total"` //money TODO: RETORNAR UM VALOR INTEIRO?
 }
 
-func (i *Item) CalculateUnitPrice() decimal.Decimal {
+func (i *OrderItem) CalculateUnitPrice() decimal.Decimal {
 	//TODO?
 
 	if i.Total.IsZero() {
