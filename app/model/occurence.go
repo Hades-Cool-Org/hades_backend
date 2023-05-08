@@ -18,9 +18,8 @@ const (
 )
 
 type OccurrenceItem struct {
-	ProductID    uint           `json:"product_id"`
-	OccurrenceID uint           `json:"occurrence_id"`
-	Type         OccurrenceType `json:"type"` //positive negative
+	ProductID uint           `json:"product_id"`
+	Type      OccurrenceType `json:"type"` //positive negative
 
 	Name          string  `json:"name"`
 	MeasuringUnit string  `json:"measuring_unit"`
