@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd"
@@ -44,6 +45,8 @@ type Item struct {
 
 	Type     string // CREDIT/DEBIT
 	Quantity float64
+
+	UnitPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 }
 
 func (Item) TableName() string {
@@ -150,6 +153,7 @@ func generateItems(occurrenceParams *model.Occurrence, deliveryItems []*delivery
 				ProductID: requestItem.ProductID,
 				Type:      "DEBIT", //todo enum?
 				Quantity:  requestItem.Quantity,
+				UnitPrice: deliveryItem.UnitPrice,
 			})
 			continue
 		}

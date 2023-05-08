@@ -9,39 +9,46 @@ import (
 
 type Stock struct {
 	gorm.Model
-	StoreID  uint
-	Store    *store.Store
-	Products []*ProductData `gorm:"foreignKey:StockID"`
+
+	StoreID uint
+	Store   *store.Store
+
+	Items []*Item
 }
 
-// TableName overrides the table name used by ProductData to `stock_products`
+// TableName overrides the table name used by StockItem to `stock_products`
 func (Stock) TableName() string {
 	return "stock"
 }
 
-type ProductData struct {
-	Current   float32
-	Suggested float32
-	StockID   uint `gorm:"primaryKey;autoIncrement:false"`
+type Item struct {
+	StockID uint `gorm:"primaryKey;autoIncrement:false"`
+
+	DeliveryID uint `gorm:"primaryKey;autoIncrement:false"`
+	OrderID    uint `gorm:"primaryKey;autoIncrement:false"`
+
 	ProductID uint `gorm:"primaryKey;autoIncrement:false"`
 	Product   *product.Product
+
+	Current   float64
+	Suggested float64
 }
 
-// TableName overrides the table name used by ProductData to `stock_products`
-func (ProductData) TableName() string {
-	return "stock_products"
+// TableName overrides the table name used by StockItem to `stock_products`
+func (Item) TableName() string {
+	return "stock_items"
 }
 
 func NewModel(s *model.Stock) *Stock {
-	var products []*ProductData
+	var products []*Item
 
-	fnProduct := func(p *model.ProductData) *ProductData {
+	fnProduct := func(p *model.ProductData) *Item {
 
 		if p == nil {
 			return nil
 		}
 
-		z := &ProductData{
+		z := &Item{
 			Current:   p.Current,
 			Suggested: p.Suggested,
 			ProductID: p.ProductId,
@@ -94,7 +101,7 @@ func (s *Stock) ToDTO() *model.Stock {
 	return s2
 }
 
-func (p *ProductData) ToDTO() *model.ProductData {
+func (p *Item) ToDTO() *model.ProductData {
 	p2 := &model.ProductData{
 		Current:   p.Current,
 		Suggested: p.Suggested,

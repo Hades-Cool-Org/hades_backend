@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd"
@@ -65,6 +66,8 @@ type Item struct {
 
 	StoreID uint `gorm:"primaryKey;autoIncrement:false"`
 	Store   *store.Store
+
+	UnitPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 
 	Quantity float64
 }
@@ -129,10 +132,19 @@ func CreateDelivery(ctx context.Context, deliveryParam *model.Delivery) (*Delive
 		}
 
 		for _, di := range deliveryParam.DeliveryItems {
+
+			key := orderItems.KeyFunc()(di.ProductID, di.StoreID)
+
+			orderItem, ok := orderItems[key]
+			if !ok {
+				return nil, net.NewBadRequestError(ctx, errors.New(fmt.Sprintf("item [%d] not found in order", di.ProductID)))
+			}
+
 			i := &Item{
 				ProductID: di.ProductID,
 				StoreID:   di.StoreID,
 				Quantity:  di.Quantity,
+				UnitPrice: orderItem.UnitPrice,
 			}
 			d.Items = append(d.Items, i)
 		}
@@ -176,13 +188,19 @@ func updateOrderStatus(ctx context.Context, items map[string]*order.Item, o *ord
 	return err
 }
 
-func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*model.DeliveryItem) (map[string]*order.Item, error) {
+type OrderItems map[string]*order.Item
 
-	orderItemMap := make(map[string]*order.Item)
-	//order.item tem productId, orderId e storeId como primary key
-	fnOrderItemMapKey := func(productID uint, storeID uint) string {
+func (oi OrderItems) KeyFunc() func(uint, uint) string {
+	return func(productID uint, storeID uint) string {
 		return fmt.Sprintf("%d-%d", productID, storeID)
 	}
+}
+
+func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*model.DeliveryItem) (OrderItems, error) {
+
+	orderItemMap := make(OrderItems)
+	//order.item tem productId, orderId e storeId como primary key
+	fnOrderItemMapKey := orderItemMap.KeyFunc()
 
 	for _, item := range o.Items {
 		key := fnOrderItemMapKey(item.ProductID, item.StoreID)
