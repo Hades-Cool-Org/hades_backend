@@ -95,7 +95,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	//db save
 	s := &model.Stock{
 		ID:           createdStockId,
-		StoreId:      data.StoreId,
+		StoreID:      data.StoreID,
 		StoreName:    data.StoreName,
 		LastModified: time.Now().Format(time.RFC3339Nano),
 		Products:     data.Products,

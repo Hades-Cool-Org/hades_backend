@@ -54,7 +54,7 @@ type Request struct {
 
 func (r2 *Request) Bind(r *http.Request) error {
 
-	if r2.StoreId == 0 {
+	if r2.StoreID == 0 {
 		return errors.New("storeId cannot be zero")
 	}
 
