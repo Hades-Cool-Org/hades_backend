@@ -5,7 +5,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
 	"hades_backend/api/utils/net"
-	stockModel "hades_backend/app/cmd/stock"
+	"hades_backend/app/cmd/stock"
+	"hades_backend/app/cmd/store"
+	"hades_backend/app/database"
 	"hades_backend/app/model"
 	"net/http"
 	"strconv"
@@ -13,11 +15,10 @@ import (
 )
 
 type Router struct {
-	service *stockModel.Service
 }
 
-func NewRouter(service *stockModel.Service) *Router {
-	return &Router{service: service}
+func NewRouter() *Router {
+	return &Router{}
 }
 
 func (u *Router) URL() string {
@@ -26,25 +27,20 @@ func (u *Router) URL() string {
 
 const storeIdParam = "store_id"
 const stockIdParam = "stock_id"
-const productIdParam = "product_id"
 
 func (u *Router) Router() func(r chi.Router) {
 	return func(r chi.Router) {
-		r.Get("/{stock_id}", u.GetById)
 		r.Delete("/{stock_id}", u.Delete)
+		r.Put("/{stock_id}", u.Update)
 
 		r.Post("/store/{store_id}", u.Create)
 		r.Get("/store/{store_id}", u.GetByStoreId)
-		r.Put("/store/{store_id}/product/{product_id}", u.UpdateProduct)
-		r.Post("/store/{store_id}/product/{product_id}", u.AddProducts)
-		r.Get("/store/{store_id}/product/{product_id}", u.GetProduct)
-		r.Delete("/store/{store_id}/product/{product_id}", u.DeleteProduct)
 	}
 }
 
-func (u *Router) GetById(w http.ResponseWriter, r *http.Request) {
+func (u *Router) Update(w http.ResponseWriter, r *http.Request) {
 
-	stockId := chi.URLParam(r, "stock_id")
+	stockId := chi.URLParam(r, stockIdParam)
 
 	if stockId == "" {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("stockId is empty")))
@@ -58,13 +54,21 @@ func (u *Router) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := u.service.GetStock(r.Context(), uint(stockIdInt))
+	data := &Request{}
+
+	if err := render.Bind(r, data); err != nil {
+		render.Render(w, r, net.ErrInvalidRequest(err))
+		return
+	}
+
+	stockDb, err := stock.UpdateStock(r.Context(), uint(stockIdInt), data.Stock)
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
 		return
 	}
 
+	s := entityToResponse(stockDb)
 	render.Status(r, http.StatusOK)
 	render.Render(w, r, &Response{s})
 }
@@ -85,7 +89,8 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdStockId, err := u.service.CreateStock(r.Context(), data.Stock)
+	db := database.DB.WithContext(r.Context())
+	storeDb, err := stock.CreateStock(r.Context(), db, data.Stock)
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
@@ -93,14 +98,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//db save
-	s := &model.Stock{
-		ID:           createdStockId,
-		StoreID:      data.StoreID,
-		StoreName:    data.StoreName,
-		LastModified: time.Now().Format(time.RFC3339Nano),
-		Products:     data.Products,
-	}
-
+	s := entityToResponse(storeDb)
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, &Response{s})
 }
@@ -121,12 +119,14 @@ func (u *Router) GetByStoreId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s, err := u.service.GetStock(r.Context(), uint(storeIdInt))
+	sDb, err := stock.GetStock(r.Context(), uint(storeIdInt))
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
 		return
 	}
+
+	s := entityToResponse(sDb)
 
 	render.Status(r, http.StatusOK)
 	render.Render(w, r, &Response{s})
@@ -149,7 +149,7 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.service.DeleteStock(r.Context(), uint(stockIdInt))
+	err = stock.DeleteStock(r.Context(), uint(stockIdInt))
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
@@ -159,173 +159,50 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, http.StatusNoContent)
 }
 
-func (u *Router) UpdateProduct(w http.ResponseWriter, r *http.Request) {
+func entityToResponse(s *stock.Stock) *model.Stock {
 
-	data := &ProductRequest{}
+	st := storeEntityToModel(s.StoreID, s.Store)
 
-	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(err))
-		return
+	items := itemsEntityToModel(s.Items)
+
+	return &model.Stock{
+		ID:           s.ID,
+		Store:        st,
+		LastModified: s.UpdatedAt.Format(time.RFC3339),
+		Items:        items,
 	}
-
-	storeId := chi.URLParam(r, storeIdParam)
-
-	if storeId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
-		return
-	}
-
-	storeIdInt, err := strconv.Atoi(storeId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
-		return
-	}
-
-	productId := chi.URLParam(r, productIdParam)
-
-	if productId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
-		return
-	}
-
-	productIdInt, err := strconv.Atoi(productId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
-		return
-	}
-
-	err = u.service.UpdateProduct(r.Context(), uint(storeIdInt), uint(productIdInt), data.ProductData)
-
-	if err != nil {
-		net.RenderError(r.Context(), w, r, err)
-		return
-	}
-
-	//db save
-	p := &model.ProductData{
-		ProductId:   data.ProductData.ProductId,
-		ProductName: data.ProductData.ProductName,
-		Current:     data.ProductData.Current,
-		Suggested:   data.ProductData.Suggested,
-	}
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, &ProductResponse{p})
-
 }
 
-func (u *Router) AddProducts(w http.ResponseWriter, r *http.Request) {
-
-	data := &ProductRequestList{}
-
-	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(err))
-		return
+func storeEntityToModel(storeId uint, s *store.Store) *model.Store {
+	if s == nil {
+		return &model.Store{
+			ID: storeId,
+		}
 	}
-
-	storeId := chi.URLParam(r, storeIdParam)
-
-	if storeId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
-		return
+	return &model.Store{
+		ID:      s.ID,
+		Name:    s.Name,
+		Address: s.Address,
 	}
-
-	storeIdInt, err := strconv.Atoi(storeId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
-		return
-	}
-
-	err = u.service.AddProductToStock(r.Context(), uint(storeIdInt), data.Products)
-
-	if err != nil {
-		net.RenderError(r.Context(), w, r, err)
-		return
-	}
-
-	render.Status(r, http.StatusOK)
 }
 
-func (u *Router) GetProduct(w http.ResponseWriter, r *http.Request) {
+func itemsEntityToModel(i []*stock.Item) []*model.StockItem {
+	items := make([]*model.StockItem, 0, len(i))
 
-	storeId := chi.URLParam(r, storeIdParam)
-
-	if storeId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
-		return
+	for _, item := range i {
+		items = append(items, itemEntityToModel(item))
 	}
 
-	storeIdInt, err := strconv.Atoi(storeId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
-		return
-	}
-
-	productId := chi.URLParam(r, productIdParam)
-
-	if productId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
-		return
-	}
-
-	productIdInt, err := strconv.Atoi(productId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
-		return
-	}
-
-	p, err := u.service.GetProduct(r.Context(), uint(storeIdInt), uint(productIdInt))
-
-	if err != nil {
-		net.RenderError(r.Context(), w, r, err)
-		return
-	}
-
-	render.Status(r, http.StatusOK)
-	render.Render(w, r, &ProductResponse{p})
+	return items
 }
 
-func (u *Router) DeleteProduct(w http.ResponseWriter, r *http.Request) {
+func itemEntityToModel(i *stock.Item) *model.StockItem {
 
-	storeId := chi.URLParam(r, storeIdParam)
-
-	if storeId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is empty")))
-		return
+	return &model.StockItem{
+		ProductID:   i.ProductID,
+		ProductName: i.Product.Name,
+		ImageUrl:    i.Product.ImageUrl,
+		Current:     i.Current,
+		Suggested:   i.Suggested,
 	}
-
-	storeIdInt, err := strconv.Atoi(storeId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("storeId is not a number: "+err.Error())))
-		return
-	}
-
-	productId := chi.URLParam(r, productIdParam)
-
-	if productId == "" {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is empty")))
-		return
-	}
-
-	productIdInt, err := strconv.Atoi(productId)
-
-	if err != nil {
-		render.Render(w, r, net.ErrInvalidRequest(errors.New("productId is not a number: "+err.Error())))
-		return
-	}
-
-	err = u.service.RemoveProductFromStock(r.Context(), uint(storeIdInt), uint(productIdInt))
-
-	if err != nil {
-		net.RenderError(r.Context(), w, r, err)
-		return
-	}
-
-	render.Status(r, http.StatusOK)
 }

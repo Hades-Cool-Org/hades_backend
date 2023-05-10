@@ -70,9 +70,8 @@ func (o *Occurrence) BeforeDelete(tx *gorm.DB) error {
 	return nil
 }
 
-func CreateOccurrence(ctx context.Context, occurrenceParams *model.Occurrence) (*Occurrence, error) {
+func CreateOccurrence(ctx context.Context, db *gorm.DB, occurrenceParams *model.Occurrence) (*Occurrence, error) {
 	l := logging.FromContext(ctx)
-	db := database.DB.WithContext(ctx)
 
 	marshal, err := json.Marshal(occurrenceParams)
 
@@ -120,6 +119,12 @@ func CreateOccurrence(ctx context.Context, occurrenceParams *model.Occurrence) (
 	}
 
 	o.Items = generateItems(occurrenceParams, o.Delivery.Items)
+
+	//in case of no items, we don't need to create the occurrence
+	if len(o.Items) == 0 {
+		return nil, nil //todo: return error?
+	}
+
 	o.VendorID = o.Delivery.Order.VendorID
 
 	if err := db.Create(o).Error; err != nil {

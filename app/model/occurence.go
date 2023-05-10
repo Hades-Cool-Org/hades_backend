@@ -17,6 +17,13 @@ const (
 	TypeDebit  OccurrenceType = "DEBIT"
 )
 
+func ToOccurrenceType(s string) OccurrenceType {
+	if s == "CREDIT" {
+		return TypeCredit
+	}
+	return TypeDebit
+}
+
 type OccurrenceItem struct {
 	ProductID uint           `json:"product_id"`
 	Type      OccurrenceType `json:"type"` //positive negative

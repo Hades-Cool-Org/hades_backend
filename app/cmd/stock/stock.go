@@ -13,12 +13,13 @@ import (
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
 	"hades_backend/app/model"
+	"net/url"
 )
 
 type Stock struct {
 	gorm.Model
 
-	StoreID uint
+	StoreID uint `gorm:"index;not null;"`
 	Store   *store.Store
 
 	Items []*Item
@@ -65,10 +66,70 @@ func (s *Stock) findItem(productID uint) *Item {
 	return nil
 }
 
-func CreateStock(ctx context.Context, stockParams model.Stock) (*Stock, error) {
+// GetStockOptions TODO: add pagination
+type GetStockOptions struct {
+	Params url.Values
+}
+
+func (o *GetStockOptions) parseStockParams(query *gorm.DB) *gorm.DB {
+
+	tableName := (&Stock{}).TableName()
+
+	if s := o.Params.Get("id"); s != "" {
+		query = query.Where(tableName+".id = ?", s)
+	}
+
+	if s := o.Params.Get("store_id"); s != "" {
+		query = query.Where(tableName+".store_id = ?", s)
+	}
+
+	return query
+}
+
+func GetStock(ctx context.Context, storeID uint) (*Stock, error) {
+	db := database.DB.WithContext(ctx)
+	l := logging.FromContext(ctx)
+
+	l.Info(fmt.Sprintf("Getting stock for store %d", storeID))
+
+	s := &Stock{}
+
+	if result := db.
+		Preload("items").
+		Preload("Items.Product").
+		First(s, "store_id = ?", storeID); result.Error != nil {
+		return nil, cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	//if result := db.Model(s).Association("Items").Find(&s.Items); result.Error != nil {
+	//	return nil, result.Error
+	//}
+
+	return s, nil
+}
+
+func GetStocks(ctx context.Context, opts *GetStockOptions) ([]*Stock, error) {
+	db := database.DB.WithContext(ctx)
+	l := logging.FromContext(ctx)
+
+	l.Info(fmt.Sprintf("Getting stock for store %v", opts))
+
+	query := db.Preload("Items").Preload("Items.Product")
+
+	query = opts.parseStockParams(query)
+
+	stocks := make([]*Stock, 0)
+
+	if err := query.Find(&stocks).Error; err != nil {
+		return nil, cmd.ParseMysqlError(ctx, "occurrence", err)
+	}
+
+	return stocks, nil
+}
+
+func CreateStock(ctx context.Context, db *gorm.DB, stockParams *model.Stock) (*Stock, error) {
 
 	l := logging.FromContext(ctx)
-	db := database.DB.WithContext(ctx)
 
 	marshal, err := json.Marshal(stockParams)
 
@@ -118,7 +179,7 @@ func CreateStock(ctx context.Context, stockParams model.Stock) (*Stock, error) {
 	return s, nil
 }
 
-func UpdateStock(ctx context.Context, stockID uint, stockParams model.Stock) (*Stock, error) {
+func UpdateStock(ctx context.Context, stockID uint, stockParams *model.Stock) (*Stock, error) {
 
 	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
@@ -149,6 +210,91 @@ func UpdateStock(ctx context.Context, stockID uint, stockParams model.Stock) (*S
 	}
 
 	return s, nil
+}
+
+func AddStockItem(ctx context.Context, db *gorm.DB, stockID uint, itemParams []*model.StockItem) error {
+
+	l := logging.FromContext(ctx)
+
+	marshal, err := json.Marshal(itemParams)
+
+	if err != nil {
+		return err
+	}
+
+	l.Info(fmt.Sprintf("Adding stock item -> \n [%s]", string(marshal)))
+
+	s := &Stock{}
+
+	if result := db.Preload("Items").First(s, stockID); result.Error != nil {
+		return cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	if len(itemParams) > 0 {
+		err := s.doAction(ctx, ActionTypeAddition, itemParams)
+		if err != nil {
+			return cmd.ParseMysqlError(ctx, "stock", err)
+		}
+	}
+
+	if result := db.Save(s); result.Error != nil {
+		return cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	return nil
+}
+
+func SubtractStockItem(ctx context.Context, stockID uint, itemParams []*model.StockItem) error {
+
+	l := logging.FromContext(ctx)
+	db := database.DB.WithContext(ctx)
+
+	marshal, err := json.Marshal(itemParams)
+
+	if err != nil {
+		return err
+	}
+
+	l.Info(fmt.Sprintf("Subtracting stock item -> \n [%s]", string(marshal)))
+
+	s := &Stock{}
+
+	if result := db.Preload("Items").First(s, stockID); result.Error != nil {
+		return cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	if len(itemParams) > 0 {
+		err := s.doAction(ctx, ActionTypeSubtraction, itemParams)
+		if err != nil {
+			return cmd.ParseMysqlError(ctx, "stock", err)
+		}
+	}
+
+	if result := db.Save(s); result.Error != nil {
+		return cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	return nil
+}
+
+func DeleteStock(ctx context.Context, stockID uint) error {
+
+	l := logging.FromContext(ctx)
+	db := database.DB.WithContext(ctx)
+
+	l.Info(fmt.Sprintf("Deleting stock -> \n [%d]", stockID))
+
+	s := &Stock{}
+
+	if result := db.First(s, stockID); result.Error != nil {
+		return cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	if result := db.Delete(s); result.Error != nil {
+		return cmd.ParseMysqlError(ctx, "stock", result.Error)
+	}
+
+	return nil
 }
 
 type ActionType int
@@ -228,72 +374,6 @@ func (s *Stock) doAction(ctx context.Context, t ActionType, items []*model.Stock
 	err := actions[t](ctx, items)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func AddStockItem(ctx context.Context, stockID uint, itemParams []*model.StockItem) error {
-
-	l := logging.FromContext(ctx)
-	db := database.DB.WithContext(ctx)
-
-	marshal, err := json.Marshal(itemParams)
-
-	if err != nil {
-		return err
-	}
-
-	l.Info(fmt.Sprintf("Adding stock item -> \n [%s]", string(marshal)))
-
-	s := &Stock{}
-
-	if result := db.Preload("Items").First(s, stockID); result.Error != nil {
-		return cmd.ParseMysqlError(ctx, "stock", result.Error)
-	}
-
-	if len(itemParams) > 0 {
-		err := s.doAction(ctx, ActionTypeAddition, itemParams)
-		if err != nil {
-			return cmd.ParseMysqlError(ctx, "stock", err)
-		}
-	}
-
-	if result := db.Save(s); result.Error != nil {
-		return cmd.ParseMysqlError(ctx, "stock", result.Error)
-	}
-
-	return nil
-}
-
-func SubtractStockItem(ctx context.Context, stockID uint, itemParams []*model.StockItem) error {
-
-	l := logging.FromContext(ctx)
-	db := database.DB.WithContext(ctx)
-
-	marshal, err := json.Marshal(itemParams)
-
-	if err != nil {
-		return err
-	}
-
-	l.Info(fmt.Sprintf("Subtracting stock item -> \n [%s]", string(marshal)))
-
-	s := &Stock{}
-
-	if result := db.Preload("Items").First(s, stockID); result.Error != nil {
-		return cmd.ParseMysqlError(ctx, "stock", result.Error)
-	}
-
-	if len(itemParams) > 0 {
-		err := s.doAction(ctx, ActionTypeSubtraction, itemParams)
-		if err != nil {
-			return cmd.ParseMysqlError(ctx, "stock", err)
-		}
-	}
-
-	if result := db.Save(s); result.Error != nil {
-		return cmd.ParseMysqlError(ctx, "stock", result.Error)
 	}
 
 	return nil

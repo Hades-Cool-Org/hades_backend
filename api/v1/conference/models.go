@@ -1,4 +1,4 @@
-package occurrence
+package conference
 
 import (
 	"errors"
@@ -46,7 +46,7 @@ func (r2 *Request) Bind(r *http.Request) error {
 }
 
 type ListResponse struct {
-	Deliveries []*model.Occurrence `json:"occurrences"`
+	Occurrences []*model.Occurrence `json:"occurrences"`
 }
 
 func (c *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
