@@ -15,7 +15,6 @@ import (
 	"hades_backend/api/v1/vendors"
 	productService "hades_backend/app/cmd/product"
 	purchaseListService "hades_backend/app/cmd/purchase_list"
-	stockService "hades_backend/app/cmd/stock"
 	storeService "hades_backend/app/cmd/store"
 	userService "hades_backend/app/cmd/user"
 	vendorsCmd "hades_backend/app/cmd/vendors"
@@ -32,7 +31,6 @@ type MySQLHandler struct {
 	vendorService       *vendorsCmd.Service
 	productService      *productService.Service
 	storeService        *storeService.Service
-	stockService        *stockService.Service
 	purchaseListService *purchaseListService.Service
 }
 
@@ -50,9 +48,6 @@ func NewMySQLHandler(db *gorm.DB) *MySQLHandler {
 
 	sr := storeService.NewMySqlRepository(db)
 	h.storeService = storeService.NewService(sr, h.userRepository)
-
-	stockRepository := stockService.NewMySQLRepository(db)
-	h.stockService = stockService.NewService(stockRepository)
 
 	purchaseListRepository := purchaseListService.NewRepository(db)
 	h.purchaseListService = purchaseListService.NewService(purchaseListRepository)
@@ -121,7 +116,7 @@ func (m *MySQLHandler) initStoreRouter() *store.Router {
 }
 
 func (m *MySQLHandler) initStockRouter() *stock.Router {
-	return stock.NewRouter(m.stockService)
+	return stock.NewRouter()
 }
 
 func (m *MySQLHandler) initPurchaseListRouter() *purchase_list.Router {
