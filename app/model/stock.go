@@ -1,5 +1,7 @@
 package model
 
+import "github.com/shopspring/decimal"
+
 type Stock struct { //NO UUID, WILL BE A SELECT ALL QUERY
 	ID           uint         `json:"id"`
 	Store        *Store       `json:"store"`
@@ -8,9 +10,10 @@ type Stock struct { //NO UUID, WILL BE A SELECT ALL QUERY
 }
 
 type StockItem struct {
-	ProductID   uint    `json:"product_id"`
-	ProductName string  `json:"name"`
-	ImageUrl    string  `json:"image_url"`
-	Current     float64 `json:"current"`
-	Suggested   float64 `json:"suggested"`
+	ProductID   uint            `json:"product_id"`
+	ProductName string          `json:"name"`
+	ImageUrl    string          `json:"image_url"`
+	Current     float64         `json:"current"`
+	Suggested   float64         `json:"suggested"`
+	AvgPrice    decimal.Decimal `json:"avg_price"`
 }

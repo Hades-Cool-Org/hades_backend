@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd"
@@ -38,6 +39,8 @@ type Item struct {
 
 	Current   float64
 	Suggested float64
+
+	AvgPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 }
 
 func (s *Stock) BeforeDelete(tx *gorm.DB) error {
@@ -164,6 +167,7 @@ func CreateStock(ctx context.Context, db *gorm.DB, stockParams *model.Stock) (*S
 				ProductID: p.ID,
 				Current:   item.Current,
 				Suggested: item.Suggested,
+				AvgPrice:  item.AvgPrice,
 			})
 		} else {
 			l.Info(fmt.Sprintf("missing product id... skipping [%v]", item))
@@ -324,13 +328,14 @@ func (s *Stock) upsertStock(ctx context.Context, newItems []*model.StockItem) er
 		if oldItem, ok := oldItems[key]; ok {
 			oldItem.Current = item.Current
 			oldItem.Suggested = item.Suggested
-			i = append(i, oldItem)
+			oldItem.AvgPrice = item.AvgPrice
 		} else {
 			i = append(i, &Item{
 				StockID:   s.ID,
 				ProductID: item.ProductID,
 				Current:   item.Current,
 				Suggested: item.Suggested,
+				AvgPrice:  item.AvgPrice,
 			})
 		}
 	}
@@ -339,16 +344,29 @@ func (s *Stock) upsertStock(ctx context.Context, newItems []*model.StockItem) er
 	return nil
 }
 
+func calculateAvgPrice(currentItem *Item, newItem *model.StockItem) decimal.Decimal {
+
+	qty := currentItem.Current + newItem.Current
+
+	total := currentItem.AvgPrice.
+		Mul(decimal.NewFromFloat(currentItem.Current)).
+		Add(newItem.AvgPrice.Mul(decimal.NewFromFloat(newItem.Current)))
+
+	return total.Div(decimal.NewFromFloat(qty))
+}
+
 func (s *Stock) addStock(ctx context.Context, items []*model.StockItem) error {
 	for _, item := range items {
 		if i := s.findItem(item.ProductID); i != nil {
 			i.Current += item.Current
+			i.AvgPrice = calculateAvgPrice(i, item)
 		} else {
 			s.Items = append(s.Items, &Item{
 				StockID:   s.ID,
 				ProductID: item.ProductID,
 				Current:   item.Current,
 				Suggested: item.Suggested,
+				AvgPrice:  item.AvgPrice,
 			})
 		}
 	}
