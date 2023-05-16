@@ -2,19 +2,32 @@ package conference
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/conference"
 	"hades_backend/app/cmd/occurence"
 	"hades_backend/app/cmd/user"
 	"hades_backend/app/model"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
 
 type Router struct {
+	db *gorm.DB
+}
+
+func NewRouter(db *gorm.DB) *Router {
+	err := db.AutoMigrate(&occurence.Occurrence{}, &occurence.Item{})
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return &Router{db: db}
 }
 
 func (u *Router) URL() string {

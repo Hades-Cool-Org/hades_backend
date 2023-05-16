@@ -66,7 +66,7 @@ func (o *Order) CalculatedTotal() *Prices {
 	pendingPayment = total.Sub(payed)
 
 	return &Prices{
-		Total:          total,
+		Total:          total.Round(2),
 		PendingPayment: pendingPayment,
 		Payed:          payed,
 	}
@@ -116,6 +116,9 @@ func (o *Order) updateItems(newItems []*model.OrderItem) {
 
 	for _, item := range newItems {
 		key := fnKey(item.StoreID, item.ProductID)
+
+		item.Quantity = item.Quantity.Round(3)
+		item.Total = item.Total.Round(2)
 
 		p := item.CalculateUnitPrice()
 

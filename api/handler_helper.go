@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 	customMiddleware "hades_backend/api/middleware"
+	"hades_backend/api/v1/conference"
 	"hades_backend/api/v1/delivery"
 	"hades_backend/api/v1/login"
 	"hades_backend/api/v1/order"
@@ -81,7 +82,7 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 		storeRouter := m.initStoreRouter()
 		r.Route(storeRouter.URL(), storeRouter.Router())
 
-		stockRouter := m.initStockRouter()
+		stockRouter := stock.NewRouter(m.DB)
 		r.Route(stockRouter.URL(), stockRouter.Router())
 
 		purchaseListRouter := m.initPurchaseListRouter()
@@ -92,6 +93,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 
 		deliveryRouter := delivery.NewRouter(m.DB)
 		r.Route(deliveryRouter.URL(), deliveryRouter.Router())
+
+		conferenceRouter := conference.NewRouter(m.DB)
+		r.Route(conferenceRouter.URL(), conferenceRouter.Router())
 	})
 }
 
@@ -113,10 +117,6 @@ func (m *MySQLHandler) initProductRouter() *product.Router {
 
 func (m *MySQLHandler) initStoreRouter() *store.Router {
 	return store.NewRouter(m.storeService)
-}
-
-func (m *MySQLHandler) initStockRouter() *stock.Router {
-	return stock.NewRouter()
 }
 
 func (m *MySQLHandler) initPurchaseListRouter() *purchase_list.Router {

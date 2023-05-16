@@ -67,7 +67,7 @@ type OrderItem struct {
 	Name          string          `json:"name"`
 	ImageUrl      string          `json:"image_url"`
 	MeasuringUnit string          `json:"measuring_unit"`
-	Quantity      float64         `json:"quantity"`
+	Quantity      decimal.Decimal `json:"quantity"`
 	Total         decimal.Decimal `json:"total"` //money TODO: RETORNAR UM VALOR INTEIRO?
 }
 
@@ -78,5 +78,5 @@ func (i *OrderItem) CalculateUnitPrice() decimal.Decimal {
 		return decimal.Zero
 	}
 
-	return i.Total.Div(decimal.NewFromFloat(i.Quantity))
+	return i.Total.Div(i.Quantity).Round(2)
 }

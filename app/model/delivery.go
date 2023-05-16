@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/shopspring/decimal"
+)
 
 type DeliveryState string
 
@@ -41,10 +44,10 @@ type DeliveryItem struct {
 	ProductID uint `json:"product_id"`
 	StoreID   uint `json:"store_id"`
 
-	Name          string  `json:"name"`
-	ImageUrl      string  `json:"image_url"`
-	MeasuringUnit string  `json:"measuring_unit"`
-	Quantity      float64 `json:"quantity"`
+	Name          string          `json:"name"`
+	ImageUrl      string          `json:"image_url"`
+	MeasuringUnit string          `json:"measuring_unit"`
+	Quantity      decimal.Decimal `json:"quantity"`
 }
 
 type Vehicle struct {

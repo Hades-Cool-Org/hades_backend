@@ -29,7 +29,7 @@ func (r2 *ItemRequest) Bind(r *http.Request) error {
 			return errors.New("storeID cannot be empty")
 		}
 
-		if item.Quantity == 0 {
+		if item.Quantity.IsZero() {
 			return errors.New("quantity cannot be empty")
 		}
 	}
@@ -80,7 +80,7 @@ func (r2 *Request) Bind(r *http.Request) error {
 			return errors.New("product cannot be empty")
 		}
 
-		if product.Quantity == 0 {
+		if product.Quantity.IsZero() {
 			return errors.New("quantity cannot be empty")
 		}
 

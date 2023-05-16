@@ -30,7 +30,7 @@ type Occurrence struct {
 	StoreID uint `gorm:"not null;"`
 	Store   *store.Store
 
-	UserID uint
+	UserID *uint
 	User   *user.User
 
 	Items []*Item
@@ -43,8 +43,8 @@ type Item struct {
 	Name          string
 	MeasuringUnit string
 
-	Type     string // CREDIT/DEBIT
-	Quantity float64
+	Type     string          // CREDIT/DEBIT
+	Quantity decimal.Decimal `gorm:"type:decimal(12,3);"`
 
 	UnitPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 }
@@ -83,7 +83,7 @@ func CreateOccurrence(ctx context.Context, db *gorm.DB, occurrenceParams *model.
 
 	o := &Occurrence{}
 
-	if occurrenceParams.User.ID != 0 {
+	if occurrenceParams.User != nil && occurrenceParams.User.ID != 0 {
 		u := new(user.User)
 		if err := db.First(u, "id = ?", occurrenceParams.User.ID).Error; err != nil {
 			return nil, cmd.ParseMysqlError(ctx, "user", err)
@@ -146,7 +146,7 @@ func generateItems(occurrenceParams *model.Occurrence, deliveryItems []*delivery
 		}
 	}
 
-	items := make([]*Item, len(occurrenceParams.Items))
+	items := make([]*Item, 0)
 
 	for _, requestItem := range occurrenceParams.Items {
 
@@ -163,14 +163,14 @@ func generateItems(occurrenceParams *model.Occurrence, deliveryItems []*delivery
 			continue
 		}
 
-		if requestItem.Quantity == deliveryItem.Quantity {
+		if requestItem.Quantity.Equal(deliveryItem.Quantity) {
 			// caso recebermos um item com a mesma quantidade do delivery, lojão não tem debito nem credito com o fornecedor
 			continue
 		}
 
-		if requestItem.Quantity > deliveryItem.Quantity {
+		if requestItem.Quantity.GreaterThan(deliveryItem.Quantity) {
 			// caso recebermos um item com uma quantidade maior do que o delivery, lojão tem um debito com o fornecedor
-			quantity := requestItem.Quantity - deliveryItem.Quantity
+			quantity := requestItem.Quantity.Sub(deliveryItem.Quantity)
 
 			items = append(items, &Item{
 				ProductID: requestItem.ProductID,
@@ -180,9 +180,9 @@ func generateItems(occurrenceParams *model.Occurrence, deliveryItems []*delivery
 			continue
 		}
 
-		if requestItem.Quantity < deliveryItem.Quantity {
+		if requestItem.Quantity.LessThan(deliveryItem.Quantity) {
 			// caso recebermos um item com uma quantidade menor do que o delivery, lojão tem um credito com o fornecedor
-			quantity := deliveryItem.Quantity - requestItem.Quantity
+			quantity := deliveryItem.Quantity.Sub(requestItem.Quantity)
 
 			items = append(items, &Item{
 				ProductID: requestItem.ProductID,

@@ -17,11 +17,11 @@ func (r2 *Request) Bind(r *http.Request) error {
 	}
 
 	for _, item := range r2.Items {
-		if item.Current < 0 {
+		if item.Current.IsZero() {
 			return errors.New("current cannot be less than zero")
 		}
 
-		if item.Suggested < 0 {
+		if item.Suggested.IsNegative() {
 			return errors.New("suggested cannot be less than zero")
 		}
 

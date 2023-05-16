@@ -36,7 +36,7 @@ func (r2 *Request) Bind(r *http.Request) error {
 			return errors.New("product id cannot be empty")
 		}
 
-		if product.Quantity == 0 {
+		if product.Quantity.IsZero() {
 			return errors.New("product expected quantity cannot be empty")
 		}
 

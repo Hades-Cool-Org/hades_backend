@@ -34,7 +34,6 @@ func (u *Router) URL() string {
 }
 
 const deliveryIdParam = "delivery_id"
-const userIdParam = "user_id"
 const sessionIdParam = "session_id"
 const vehicleIdParam = "vehicle_id"
 

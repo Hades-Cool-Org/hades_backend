@@ -32,7 +32,7 @@ func (p *UpdateRequest) Bind(r *http.Request) error {
 			return errors.New(fmt.Sprintf("ProductId: %d -> %s ", item.ProductID, message))
 		}
 
-		if item.Quantity == 0 {
+		if item.Quantity.IsZero() {
 			return errFun("quantity cannot be 0")
 		}
 
@@ -77,7 +77,7 @@ func (p *Request) Bind(r *http.Request) error {
 			return errors.New(fmt.Sprintf("ProductId: %d -> %s ", item.ProductID, message))
 		}
 
-		if item.Quantity == 0 {
+		if item.Quantity.IsZero() {
 			return errFun("quantity cannot be 0")
 		}
 
@@ -141,7 +141,7 @@ func (p *UpdateItemRequest) Bind(r *http.Request) error {
 		return errors.New(fmt.Sprintf("ProductId: %d -> %s ", p.ProductID, message))
 	}
 
-	if p.Quantity == 0 {
+	if p.Quantity.IsZero() {
 		return errFun("quantity cannot be 0")
 	}
 

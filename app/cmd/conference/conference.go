@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"hades_backend/app/cmd"
+	"hades_backend/app/cmd/delivery"
 	"hades_backend/app/cmd/occurence"
 	"hades_backend/app/cmd/stock"
 	"hades_backend/app/database"
@@ -34,10 +35,8 @@ func DoConference(ctx context.Context, params *model.Occurrence) error {
 	s := &stock.Stock{}
 
 	if result := tx.
-		//Preload("items").
-		//Preload("Items.Product").
 		First(s, "store_id = ?", storeID); result.Error != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			// should we really do that?!
 			s, err = stock.CreateStock(ctx, tx, &model.Stock{
 				Store: &model.Store{ID: storeID},
@@ -48,17 +47,44 @@ func DoConference(ctx context.Context, params *model.Occurrence) error {
 			}
 		} else {
 			tx.Rollback()
-			return err
+			return result.Error
 		}
 	}
 
-	stockItems := make([]*model.StockItem, len(params.Items))
+	del := new(delivery.Delivery)
+	if err := tx.
+		Preload("Items").
+		Preload("Order").
+		First(del, "id = ?", params.DeliveryID).Error; err != nil {
+		return cmd.ParseMysqlError(ctx, "delivery", err)
+	}
+
+	deliveryItemsMap := make(map[string]*delivery.Item)
+	fnKey := func(productID uint, storeID uint) string {
+		return fmt.Sprintf("%d-%d", productID, storeID)
+	}
+
+	for _, item := range del.Items {
+		deliveryItemsMap[fnKey(item.ProductID, item.StoreID)] = item
+	}
+
+	stockItems := make([]*model.StockItem, 0)
 
 	for _, item := range params.Items {
+
+		key := fnKey(item.ProductID, storeID)
+
+		deliveryItem, ok := deliveryItemsMap[key]
+
+		if !ok {
+			tx.Rollback()
+			return errors.New("delivery item not found")
+		}
 
 		stockItem := &model.StockItem{
 			ProductID: item.ProductID,
 			Current:   item.Quantity,
+			AvgPrice:  deliveryItem.UnitPrice,
 		}
 
 		stockItems = append(stockItems, stockItem)

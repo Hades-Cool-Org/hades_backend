@@ -2,23 +2,32 @@ package stock
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
+	"gorm.io/gorm"
 	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd/stock"
 	"hades_backend/app/cmd/store"
 	"hades_backend/app/database"
 	"hades_backend/app/model"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
 
 type Router struct {
+	db *gorm.DB
 }
 
-func NewRouter() *Router {
-	return &Router{}
+func NewRouter(db *gorm.DB) *Router {
+	err := db.AutoMigrate(&stock.Stock{}, &stock.Item{})
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return &Router{db: db}
 }
 
 func (u *Router) URL() string {
@@ -204,5 +213,6 @@ func itemEntityToModel(i *stock.Item) *model.StockItem {
 		ImageUrl:    i.Product.ImageUrl,
 		Current:     i.Current,
 		Suggested:   i.Suggested,
+		AvgPrice:    i.AvgPrice,
 	}
 }

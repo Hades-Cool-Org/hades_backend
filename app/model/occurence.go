@@ -1,5 +1,7 @@
 package model
 
+import "github.com/shopspring/decimal"
+
 type Occurrence struct {
 	ID          uint              `json:"id"`
 	DeliveryID  uint              `json:"delivery_id"`
@@ -28,7 +30,7 @@ type OccurrenceItem struct {
 	ProductID uint           `json:"product_id"`
 	Type      OccurrenceType `json:"type"` //positive negative
 
-	Name          string  `json:"name"`
-	MeasuringUnit string  `json:"measuring_unit"`
-	Quantity      float64 `json:"quantity"`
+	Name          string          `json:"name"`
+	MeasuringUnit string          `json:"measuring_unit"`
+	Quantity      decimal.Decimal `json:"quantity"`
 }

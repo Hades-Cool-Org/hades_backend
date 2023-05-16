@@ -68,8 +68,11 @@ type Item struct {
 	Store   *store.Store
 
 	UnitPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
+	Quantity  decimal.Decimal `gorm:"type:decimal(12,3);"`
+}
 
-	Quantity float64
+func (d Item) TableName() string {
+	return "delivery_items"
 }
 
 // CreateDelivery creates a new delivery
@@ -137,7 +140,7 @@ func CreateDelivery(ctx context.Context, deliveryParam *model.Delivery) (*Delive
 
 			orderItem, ok := orderItems[key]
 			if !ok {
-				return nil, net.NewBadRequestError(ctx, errors.New(fmt.Sprintf("item [%d] not found in order", di.ProductID)))
+				return nil, net.NewBadRequestError(ctx, errors.New(fmt.Sprintf("item: [%d] store:[%d] not found in order", di.ProductID, di.StoreID)))
 			}
 
 			i := &Item{
@@ -167,7 +170,7 @@ func updateOrderStatus(ctx context.Context, items map[string]*order.Item, o *ord
 	status := model.Accepted
 
 	for _, item := range items {
-		if item.Quantity != 0 {
+		if item.Quantity.IsZero() {
 			status = model.AcceptedPartially
 			l.Debug(fmt.Sprintf("item [%d] -> quantity not zero, order status -> AcceptedPartially", item.ProductID))
 			break
@@ -219,7 +222,7 @@ func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*mo
 			key := fnOrderItemMapKey(orderDeliveryItem.ProductID, orderDeliveryItem.StoreID)
 			i, ok := orderItemMap[key]
 			if ok {
-				i.Quantity -= orderDeliveryItem.Quantity
+				i.Quantity = i.Quantity.Sub(orderDeliveryItem.Quantity)
 			}
 		}
 	}
@@ -232,14 +235,14 @@ func validateOrderItems(ctx context.Context, o *order.Order, deliveryItems []*mo
 
 		if !ok {
 			return nil, net.NewHadesError(ctx,
-				errors.New(fmt.Sprintf("Product %d not found in order %d", di.ProductID, o.ID)),
+				errors.New(fmt.Sprintf("Product %d, storeId %d not found in order %d", di.ProductID, di.StoreID, o.ID)),
 				http.StatusBadRequest,
 			)
 		}
 
-		if di.Quantity > itemInOrder.Quantity {
+		if di.Quantity.GreaterThan(itemInOrder.Quantity) {
 			return nil, net.NewHadesError(ctx,
-				errors.New(fmt.Sprintf("Product %d quantity %f is greater than order quantity %f", di.ProductID, di.Quantity, itemInOrder.Quantity)),
+				errors.New(fmt.Sprintf("Product %d, store: %d  -> quantity %s is greater than order quantity %s", di.ProductID, di.StoreID, di.Quantity, itemInOrder.Quantity)),
 				http.StatusBadRequest,
 			)
 		}

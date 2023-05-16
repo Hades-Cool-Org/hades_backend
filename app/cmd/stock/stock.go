@@ -37,8 +37,8 @@ type Item struct {
 	ProductID uint `gorm:"primaryKey;autoIncrement:false"`
 	Product   *product.Product
 
-	Current   float64
-	Suggested float64
+	Current   decimal.Decimal
+	Suggested decimal.Decimal
 
 	AvgPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 }
@@ -98,7 +98,7 @@ func GetStock(ctx context.Context, storeID uint) (*Stock, error) {
 	s := &Stock{}
 
 	if result := db.
-		Preload("items").
+		Preload("Items").
 		Preload("Items.Product").
 		First(s, "store_id = ?", storeID); result.Error != nil {
 		return nil, cmd.ParseMysqlError(ctx, "stock", result.Error)
@@ -329,6 +329,7 @@ func (s *Stock) upsertStock(ctx context.Context, newItems []*model.StockItem) er
 			oldItem.Current = item.Current
 			oldItem.Suggested = item.Suggested
 			oldItem.AvgPrice = item.AvgPrice
+			i = append(i, oldItem)
 		} else {
 			i = append(i, &Item{
 				StockID:   s.ID,
@@ -346,19 +347,19 @@ func (s *Stock) upsertStock(ctx context.Context, newItems []*model.StockItem) er
 
 func calculateAvgPrice(currentItem *Item, newItem *model.StockItem) decimal.Decimal {
 
-	qty := currentItem.Current + newItem.Current
+	qty := currentItem.Current.Add(newItem.Current)
 
 	total := currentItem.AvgPrice.
-		Mul(decimal.NewFromFloat(currentItem.Current)).
-		Add(newItem.AvgPrice.Mul(decimal.NewFromFloat(newItem.Current)))
+		Mul(currentItem.Current).
+		Add(newItem.AvgPrice.Mul(newItem.Current))
 
-	return total.Div(decimal.NewFromFloat(qty))
+	return total.Div(qty)
 }
 
 func (s *Stock) addStock(ctx context.Context, items []*model.StockItem) error {
 	for _, item := range items {
 		if i := s.findItem(item.ProductID); i != nil {
-			i.Current += item.Current
+			i.Current = i.Current.Add(item.Current)
 			i.AvgPrice = calculateAvgPrice(i, item)
 		} else {
 			s.Items = append(s.Items, &Item{
@@ -376,7 +377,7 @@ func (s *Stock) addStock(ctx context.Context, items []*model.StockItem) error {
 func (s *Stock) subtractStock(ctx context.Context, items []*model.StockItem) error {
 	for _, item := range items {
 		if i := s.findItem(item.ProductID); i != nil {
-			i.Current -= item.Current
+			i.Current = i.Current.Sub(item.Current)
 		}
 	}
 	return nil

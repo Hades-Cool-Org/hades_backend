@@ -13,7 +13,7 @@ type StockItem struct {
 	ProductID   uint            `json:"product_id"`
 	ProductName string          `json:"name"`
 	ImageUrl    string          `json:"image_url"`
-	Current     float64         `json:"current"`
-	Suggested   float64         `json:"suggested"`
+	Current     decimal.Decimal `json:"current"`
+	Suggested   decimal.Decimal `json:"suggested"`
 	AvgPrice    decimal.Decimal `json:"avg_price"`
 }

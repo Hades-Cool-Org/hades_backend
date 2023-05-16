@@ -15,12 +15,12 @@ type Item struct {
 	StoreID uint `gorm:"primaryKey;autoIncrement:false"`
 	Store   *store.Store
 
-	Quantity  float64
+	Quantity  decimal.Decimal `gorm:"type:decimal(12,3);"`
 	UnitPrice decimal.Decimal `gorm:"type:decimal(12,3);"`
 }
 
 func (i *Item) CalculateTotal() decimal.Decimal {
-	return i.UnitPrice.Mul(decimal.NewFromFloat(i.Quantity))
+	return i.UnitPrice.Mul(i.Quantity).Round(2)
 }
 
 func (i Item) TableName() string {
