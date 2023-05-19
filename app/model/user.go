@@ -19,5 +19,6 @@ type Role struct {
 }
 
 type Login struct {
-	Token string
+	Token      string
+	FirstLogin bool `json:"first_login,omitempty"`
 }

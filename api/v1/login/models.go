@@ -24,7 +24,8 @@ func (lr *Request) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	Token string `json:"jwt"`
+	Token      string `json:"jwt"`
+	FirstLogin bool   `json:"first_login"`
 }
 
 func (u *Response) Render(w http.ResponseWriter, r *http.Request) error {

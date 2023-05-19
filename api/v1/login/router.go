@@ -40,5 +40,5 @@ func (u *Router) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.Render(w, r, &Response{Token: login.Token})
+	render.Render(w, r, &Response{Token: login.Token, FirstLogin: login.FirstLogin})
 }
