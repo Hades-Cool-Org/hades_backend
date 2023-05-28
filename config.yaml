@@ -9,6 +9,6 @@ database:
   pass: "example"
   db_name: "hades_db"
   port: "3306"
-  host: "127.0.0.1"
+  host: "host.docker.internal"
 
 env: "dev"
