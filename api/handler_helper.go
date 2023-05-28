@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"
 	customMiddleware "hades_backend/api/middleware"
+	"hades_backend/api/v1/balance"
 	"hades_backend/api/v1/conference"
 	"hades_backend/api/v1/delivery"
 	"hades_backend/api/v1/login"
@@ -96,6 +97,9 @@ func (m *MySQLHandler) Handle(r chi.Router) {
 
 		conferenceRouter := conference.NewRouter(m.DB)
 		r.Route(conferenceRouter.URL(), conferenceRouter.Router())
+
+		balanceRouter := balance.NewRouter(m.DB)
+		r.Route(balanceRouter.URL(), balanceRouter.Router())
 	})
 }
 

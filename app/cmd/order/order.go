@@ -8,7 +8,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+	"hades_backend/api/utils/net"
 	"hades_backend/app/cmd"
+	"hades_backend/app/cmd/balance"
 	"hades_backend/app/cmd/user"
 	"hades_backend/app/cmd/vendors"
 	"hades_backend/app/database"
@@ -236,6 +238,18 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 	}
 
 	if len(orderParams.Items) > 0 {
+
+		if orderParams.User.ID == 0 {
+			tx.Rollback()
+			return errors.New("userId is required when updating items")
+		}
+
+		err := validateBalance(ctx, tx, orderParams.User.ID, existingOrder)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+
 		existingOrder.updateItems(orderParams.Items)
 		//does it remove the old items? (not in the new list)
 		//if err := tx.Model(existingOrder).Association("Items").Sa(existingOrder.Items); err != nil {
@@ -261,6 +275,34 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 	}
 
 	l.Info(fmt.Sprintf("Updated order [%d] ", orderID))
+
+	return nil
+}
+
+func validateBalance(ctx context.Context, tx *gorm.DB, userID uint, existingOrder *Order) error {
+	//validating user credit
+	b, err := balance.GetBalance(ctx, tx, userID)
+
+	if err != nil {
+		tx.Rollback()
+		return cmd.ParseMysqlError(ctx, "order", err)
+	}
+
+	if b.Amount.LessThan(existingOrder.Total) {
+		tx.Rollback()
+		return net.NewBadRequestError(ctx, errors.New("user has not enough balance"))
+	}
+
+	_, err = balance.ManageBalance(ctx, &balance.Params{
+		UserID:    userID,
+		Amount:    existingOrder.Total,
+		Operation: balance.Debit,
+	})
+
+	if err != nil {
+		tx.Rollback()
+		return net.NewBadRequestError(ctx, err)
+	}
 
 	return nil
 }

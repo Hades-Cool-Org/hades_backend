@@ -16,10 +16,10 @@ import (
 
 func DoConference(ctx context.Context, params *model.Occurrence) error {
 
-	dbz := database.DB.WithContext(ctx)
+	db := database.DB.WithContext(ctx)
 	l := logging.FromContext(ctx)
 
-	tx := dbz.Begin()
+	tx := db.Begin()
 
 	_, err := occurence.CreateOccurrence(ctx, tx, params)
 
