@@ -45,4 +45,15 @@ NewRelic
 Project
 
 - build
-  C:\Users\nogue\projs\hades_backend\app> go build -v .
+
+  `C:\Users\nogue\projs\hades_backend\app> go build -v .`
+
+- docker_build:
+
+  `docker build -t hades_api --progress=plain .`
+
+- docker_run:
+
+    `docker run -p 3333:3333 --name hades_api --network="host" hades_api`
+
+
