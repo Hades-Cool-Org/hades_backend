@@ -125,5 +125,10 @@ func ManageBalance(ctx context.Context, params *Params) (*Balance, error) {
 		return nil, cmd.ParseMysqlError(ctx, "balance", err)
 	}
 
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		return nil, cmd.ParseMysqlError(ctx, "conference", err)
+	}
+
 	return b, nil
 }

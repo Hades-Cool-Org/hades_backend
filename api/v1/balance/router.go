@@ -97,10 +97,11 @@ func (u *Router) GetBalance(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	if bl == nil {
-		render.Status(r, http.StatusNotFound)
+		net.RenderError(r.Context(), w, r, net.NewNotFoundError(r.Context(), errors.New("balance not found")))
 		return
 	}
 
