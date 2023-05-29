@@ -33,8 +33,8 @@ CREATE SCHEMA `hades_db` DEFAULT CHARACTER SET utf8mb4 ;
 
 Docker
 
-- `docker-compose -f stack.yml up`
-- `docker-compose -f stack.yml down`
+- `docker-compose -f stack.yml up -d`
+- `docker-compose -f stack.yml down -d`
 
 NewRelic
 
@@ -54,6 +54,16 @@ Project
 
 - docker_run:
 
-    `docker run -p 3333:3333 --name hades_api --network="host" hades_api`
+  ``` 
+  docker run -p 3333:3333 --name hades_api -d --network="host" --add-host=host.docker.internal:host-gateway hades_api`
+  
+  docker exec -it docker-db-1 bash
+  
+  mysql -u root -p](https://www.section.io/engineering-education/nginx-reverse-proxy/)
+  
+  sudo timedatectl set-timezone America/Sao_Paulo
+  
+  https://www.section.io/engineering-education/nginx-reverse-proxy/
+  ```
 
 
