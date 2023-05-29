@@ -238,18 +238,6 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 	}
 
 	if len(orderParams.Items) > 0 {
-
-		if orderParams.User.ID == 0 {
-			tx.Rollback()
-			return errors.New("userId is required when updating items")
-		}
-
-		err := validateBalance(ctx, tx, orderParams.User.ID, existingOrder)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
 		existingOrder.updateItems(orderParams.Items)
 		//does it remove the old items? (not in the new list)
 		//if err := tx.Model(existingOrder).Association("Items").Sa(existingOrder.Items); err != nil {
@@ -258,6 +246,17 @@ func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) er
 		//}
 		prices := existingOrder.CalculatedTotal()
 		existingOrder.Total = prices.Total
+
+		if orderParams.User == nil || orderParams.User.ID == 0 {
+			tx.Rollback()
+			return net.NewBadRequestError(ctx, errors.New("userId is required when updating items"))
+		}
+
+		err := validateBalance(ctx, tx, orderParams.User.ID, existingOrder)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
 	if orderParams.State != nil {
@@ -288,7 +287,7 @@ func validateBalance(ctx context.Context, tx *gorm.DB, userID uint, existingOrde
 		return cmd.ParseMysqlError(ctx, "order", err)
 	}
 
-	if b.Amount.LessThan(existingOrder.Total) {
+	if b == nil || b.Amount.LessThan(existingOrder.Total) {
 		tx.Rollback()
 		return net.NewBadRequestError(ctx, errors.New("user has not enough balance"))
 	}

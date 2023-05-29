@@ -49,7 +49,11 @@ func GetBalance(ctx context.Context, db *gorm.DB, userID uint) (*Balance, error)
 	b := new(Balance)
 
 	if err := db.First(b, "user_id = ?", userID).Error; err != nil {
-		return nil, cmd.ParseMysqlError(ctx, "balance", err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		} else {
+			return nil, cmd.ParseMysqlError(ctx, "balance", err)
+		}
 	}
 
 	return b, nil

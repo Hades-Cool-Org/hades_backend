@@ -58,6 +58,7 @@ func (u *Router) Conference(w http.ResponseWriter, r *http.Request) {
 	err := conference.DoConference(r.Context(), request.Occurrence)
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -82,6 +83,7 @@ func (u *Router) GetByOccurrenceId(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		render.Render(w, r, net.ErrInvalidRequest(errors.New("occurrenceId is not a number: "+err.Error())))
+		return
 	}
 
 	render.Status(r, http.StatusOK)
@@ -107,6 +109,7 @@ func (u *Router) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusNoContent)
@@ -122,6 +125,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		net.RenderError(r.Context(), w, r, err)
+		return
 	}
 
 	render.Status(r, http.StatusOK)
