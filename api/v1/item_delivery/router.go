@@ -52,7 +52,7 @@ func (u *Router) Create(w http.ResponseWriter, r *http.Request) {
 		ID:        "idfromdb",
 		State:     "created",
 		User:      data.User,
-		StartDate: time.Now().Format(time.RFC3339),
+		StartDate: time.Now().Local().Format(time.RFC3339),
 		EndDate:   "",
 		Items:     data.Items,
 	}
@@ -83,7 +83,7 @@ func (u *Router) Get(w http.ResponseWriter, r *http.Request) {
 	delivery := &Delivery{
 		ID:        boxId,
 		State:     "created",
-		StartDate: time.Now().Format(time.RFC3339),
+		StartDate: time.Now().Local().Format(time.RFC3339),
 		EndDate:   "",
 	}
 
@@ -115,7 +115,7 @@ func (u *Router) GetAll(w http.ResponseWriter, r *http.Request) {
 			ID:   userId,
 			Name: "",
 		},
-		StartDate: time.Now().Format(time.RFC3339),
+		StartDate: time.Now().Local().Format(time.RFC3339),
 		EndDate:   "",
 	}
 

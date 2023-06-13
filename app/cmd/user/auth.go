@@ -72,7 +72,7 @@ func (s *AuthService) encodeUserToken(user *user2.User) string {
 		"user_id": user.ID,
 		"name":    user.Name,
 		"roles":   roles,
-		"exp":     time.Now().UTC().Add(ttl).Unix(),
+		"exp":     time.Now().Local().Add(ttl).Unix(),
 	})
 
 	return tokenString

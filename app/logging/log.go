@@ -21,7 +21,7 @@ func Initialize() *zap.Logger {
 
 	log = log.With(
 		zap.String("app_name", "hades_backend"),
-		zap.Time("start_time", time.Now()),
+		zap.Time("start_time", time.Now().Local()),
 	)
 
 	return log

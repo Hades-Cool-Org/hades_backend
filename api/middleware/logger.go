@@ -17,7 +17,7 @@ func Logger(l *zap.Logger) func(next http.Handler) http.Handler {
 			ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 			ww.Header().Set("X-Request-Id", middleware.GetReqID(r.Context()))
 
-			t1 := time.Now()
+			t1 := time.Now().Local()
 			defer func() {
 				l.Info("Served",
 					zap.String("proto", r.Proto),
