@@ -27,7 +27,8 @@ func (s *Service) CreateUser(ctx context.Context, user *model.User) (uint, error
 	logger := logging.FromContext(ctx)
 	logger.Info("creating user", zap.String("email", user.Email))
 
-	user.FirstLogin = true
+	fl := true
+	user.FirstLogin = &fl
 	user.Password = s.authService.EncodePassword(user.Password)
 
 	id, err := s.repository.Create(ctx, user)

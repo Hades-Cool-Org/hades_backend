@@ -62,13 +62,15 @@ func (r2 *Router) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	firstLogin := true
+
 	u := &userModel.User{
 		ID:         id,
 		Name:       data.Name,
 		Email:      data.Email,
 		Phone:      data.Phone,
 		Roles:      data.Roles,
-		FirstLogin: true,
+		FirstLogin: &firstLogin,
 	}
 
 	render.Status(r, http.StatusCreated)

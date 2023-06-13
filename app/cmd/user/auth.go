@@ -45,7 +45,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (*user2
 	}
 
 	if s.decodePassword(u.Password) == password {
-		return &user2.Login{Token: s.encodeUserToken(u), FirstLogin: u.FirstLogin}, nil
+		return &user2.Login{Token: s.encodeUserToken(u), FirstLogin: *u.FirstLogin}, nil
 	}
 
 	return nil, net.NewForbiddenError(ctx, errors.New("invalid user or password"))

@@ -31,7 +31,7 @@ func (u *User) ToDto() *model.User {
 		Phone:      u.Phone,
 		Roles:      roles,
 		Password:   u.Password,
-		FirstLogin: u.FirstLogin.Bool,
+		FirstLogin: &u.FirstLogin.Bool,
 		DeletedAt:  u.DeletedAt.Time,
 	}
 }
@@ -49,15 +49,19 @@ func NewModel(user *model.User) *User {
 		roles = append(roles, r)
 	}
 
-	firstLogin := sql.NullBool{Bool: user.FirstLogin, Valid: true}
-
 	u := &User{
-		Name:       user.Name,
-		Email:      user.Email,
-		Phone:      user.Phone,
-		Password:   user.Password,
-		Roles:      roles,
-		FirstLogin: firstLogin,
+		Name:     user.Name,
+		Email:    user.Email,
+		Phone:    user.Phone,
+		Password: user.Password,
+		Roles:    roles,
+	}
+
+	if user.FirstLogin != nil {
+
+		fl := *(user.FirstLogin)
+
+		u.FirstLogin = sql.NullBool{Bool: fl, Valid: true}
 	}
 
 	if user.ID != 0 {

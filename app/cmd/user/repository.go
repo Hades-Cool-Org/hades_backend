@@ -75,6 +75,8 @@ func (m *MySqlRepository) GetMultipleByIds(ctx context.Context, ids []uint) ([]*
 }
 
 func (m *MySqlRepository) Create(ctx context.Context, user *model.User) (uint, error) {
+	fl := true
+	user.FirstLogin = &fl
 	mm := NewModel(user)
 
 	if err := m.db.Create(mm).Error; err != nil {

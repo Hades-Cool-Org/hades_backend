@@ -7,6 +7,8 @@ import (
 )
 
 func TestAuthService_Login(t *testing.T) {
+
+	fl := true
 	repo := &MockRepository{
 		Users: map[uint]*model.User{
 			1: {
@@ -17,6 +19,7 @@ func TestAuthService_Login(t *testing.T) {
 				Roles: []*model.Role{
 					{Name: "user"},
 				},
+				FirstLogin: &fl,
 			},
 		},
 	}
