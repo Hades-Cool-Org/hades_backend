@@ -52,3 +52,11 @@ func (m *MockRepository) GetByEmail(ctx context.Context, email string) (*model.U
 	}
 	return nil, errors.New("user not found")
 }
+
+func (m *MockRepository) GetUsers(ctx context.Context) ([]*model.User, error) {
+	var result []*model.User
+	for _, user := range m.Users {
+		result = append(result, user)
+	}
+	return result, nil
+}
