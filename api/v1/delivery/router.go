@@ -459,7 +459,16 @@ func convertDeliveryToResponse(d *delivery.Delivery) *model.Delivery {
 
 	deliveryState, _ := model.DeliveryStateFromString(d.State)
 
-	orderState, _ := model.OrderStateFromString(d.Order.State)
+	orderState := func() *model.OrderState {
+		orderState := model.Created
+
+		if d.Order != nil {
+			s, _ := model.OrderStateFromString(d.Order.State)
+			orderState = *s
+		}
+
+		return &orderState
+	}()
 
 	user := &model.User{
 		ID: d.Order.UserID,

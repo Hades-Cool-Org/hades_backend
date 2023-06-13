@@ -33,6 +33,7 @@ func (r2 *Router) Router() func(r chi.Router) {
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.PermissionCheck(middleware.FnIsAdmin))
 				r.Post("/", r2.Create)
+				r.Get("/", r2.List)
 			})
 
 			r.Group(func(r chi.Router) {
@@ -74,6 +75,18 @@ func (r2 *Router) Create(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &Response{u})
 }
 
+func (r2 *Router) List(w http.ResponseWriter, r *http.Request) {
+
+	users, err := r2.UserService.GetUsers(r.Context())
+
+	if err != nil {
+		net.RenderError(r.Context(), w, r, err)
+		return
+	}
+
+	render.Render(w, r, &ListResponse{users})
+}
+
 func (r2 *Router) Update(w http.ResponseWriter, r *http.Request) {
 
 	data := &Request{}
@@ -99,11 +112,12 @@ func (r2 *Router) Update(w http.ResponseWriter, r *http.Request) {
 
 	//db update u
 	u := &userModel.User{
-		ID:    uint(userIdInt),
-		Name:  data.Name,
-		Email: data.Email,
-		Phone: data.Phone,
-		Roles: data.Roles,
+		ID:         uint(userIdInt),
+		Name:       data.Name,
+		Email:      data.Email,
+		Phone:      data.Phone,
+		Roles:      data.Roles,
+		FirstLogin: data.FirstLogin,
 	}
 
 	err = r2.UserService.UpdateUser(r.Context(), uint(userIdInt), u)

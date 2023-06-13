@@ -8,6 +8,7 @@ import (
 	"hades_backend/app/cmd"
 	"hades_backend/app/cmd/delivery"
 	"hades_backend/app/cmd/occurence"
+	"hades_backend/app/cmd/order"
 	"hades_backend/app/cmd/stock"
 	"hades_backend/app/database"
 	"hades_backend/app/logging"
@@ -21,7 +22,7 @@ func DoConference(ctx context.Context, params *model.Occurrence) error {
 
 	tx := db.Begin()
 
-	_, err := occurence.CreateOccurrence(ctx, tx, params)
+	ocurrence, err := occurence.CreateOccurrence(ctx, tx, params)
 
 	if err != nil {
 		tx.Rollback()
@@ -96,6 +97,17 @@ func DoConference(ctx context.Context, params *model.Occurrence) error {
 		tx.Rollback()
 		return err
 	}
+
+	status := model.Completed
+
+	// if no occurrence was created, then we can update the order
+	if ocurrence != nil {
+		status = model.ReceivedPartially
+	}
+
+	err = order.UpdateOrderInTx(ctx, tx, del.OrderID, &model.Order{
+		State: &status,
+	})
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()

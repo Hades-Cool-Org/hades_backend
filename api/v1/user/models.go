@@ -19,6 +19,17 @@ func (u *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+type ListResponse struct {
+	Users []*model.User `json:"users"`
+}
+
+func (u *ListResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	for _, user := range u.Users {
+		user.Password = "***"
+	}
+	return nil
+}
+
 func (u *Request) Bind(r *http.Request) error {
 
 	if u.Name == "" {

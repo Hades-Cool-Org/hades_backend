@@ -49,12 +49,15 @@ func NewModel(user *model.User) *User {
 		roles = append(roles, r)
 	}
 
+	firstLogin := sql.NullBool{Bool: user.FirstLogin, Valid: true}
+
 	u := &User{
-		Name:     user.Name,
-		Email:    user.Email,
-		Phone:    user.Phone,
-		Password: user.Password,
-		Roles:    roles,
+		Name:       user.Name,
+		Email:      user.Email,
+		Phone:      user.Phone,
+		Password:   user.Password,
+		Roles:      roles,
+		FirstLogin: firstLogin,
 	}
 
 	if user.ID != 0 {

@@ -85,6 +85,8 @@ func (o *Order) BeforeDelete(tx *gorm.DB) error {
 	delModels := map[string]interface{}{
 		"items":    &[]Item{},
 		"payments": &[]Payment{},
+		//"delivery":   &[]delivery.Delivery{},
+		//"occurrence": &[]occurence.Occurrence{},
 	}
 	for name, dm := range delModels {
 		if result := tx.Delete(dm, "order_id = ?", o.ID); result.Error != nil {
@@ -183,8 +185,16 @@ func RemoveItems(ctx context.Context, orderID uint, items []*model.OrderItem) er
 // items are not removed if they are not in the new list
 func UpdateOrder(ctx context.Context, orderID uint, orderParams *model.Order) error {
 
-	l := logging.FromContext(ctx)
 	db := database.DB.WithContext(ctx)
+
+	return UpdateOrderInTx(ctx, db, orderID, orderParams)
+}
+
+// UpdateOrderInTx updates an order in transaction
+// items are not removed if they are not in the new list
+func UpdateOrderInTx(ctx context.Context, db *gorm.DB, orderID uint, orderParams *model.Order) error {
+
+	l := logging.FromContext(ctx)
 
 	marshal, err := json.Marshal(orderParams)
 

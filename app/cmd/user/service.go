@@ -59,3 +59,10 @@ func (s *Service) DeleteUser(ctx context.Context, id uint) error {
 
 	return s.repository.Delete(ctx, id)
 }
+
+func (s *Service) GetUsers(ctx context.Context) ([]*model.User, error) {
+	logger := logging.FromContext(ctx)
+	logger.Info("getting all users")
+
+	return s.repository.GetUsers(ctx)
+}
