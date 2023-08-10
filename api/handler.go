@@ -20,7 +20,7 @@ func Handler(l *zap.Logger) http.Handler {
 
 	r.Use(
 		cors.Handler(cors.Options{
-			AllowedOrigins: []string{"https://*", "http://*"},
+			AllowedOrigins: []string{"*"},
 			AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "PATCH"},
 			AllowedHeaders: []string{"Authorization", "Content-Type"},
 		}))
